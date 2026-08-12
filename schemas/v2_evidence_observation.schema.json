@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "V2 evidence drift observation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "snapshot_id", "source_url", "doi", "source_locator",
+    "observed_at", "status", "content", "content_sha256", "retrieval"
+  ],
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "snapshot_id": {"type": "string", "minLength": 1},
+    "source_url": {"type": "string", "format": "uri", "pattern": "^https://"},
+    "doi": {"type": "string", "pattern": "^10\\."},
+    "source_locator": {"type": "string", "minLength": 1},
+    "observed_at": {"type": "string", "format": "date-time"},
+    "status": {"type": "string", "enum": ["available", "unavailable"]},
+    "content": {"type": ["string", "null"]},
+    "content_sha256": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "retrieval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "actor", "independently_verified", "receipt_sha256"],
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": ["publisher_api", "publisher_page", "repository", "web_archive", "manual"]
+        },
+        "actor": {"type": "string", "minLength": 1},
+        "independently_verified": {"type": "boolean"},
+        "receipt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

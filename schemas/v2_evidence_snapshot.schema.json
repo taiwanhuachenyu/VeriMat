@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "snapshot_id", "content", "content_sha256", "source_url",
+    "doi", "source_locator", "retrieved_at", "license_spdx", "attribution",
+    "normalization", "publication_date"
+  ],
+  "properties": {
+    "schema_version": {"type": "integer", "enum": [1]},
+    "snapshot_id": {"type": "string"},
+    "content": {"type": "string"},
+    "content_sha256": {"type": "string"},
+    "source_url": {"type": "string"},
+    "doi": {"type": "string"},
+    "source_locator": {"type": "string"},
+    "publication_date": {"type": "string"},
+    "retrieved_at": {"type": "string"},
+    "license_spdx": {"type": "string", "enum": ["CC-BY-4.0"]},
+    "attribution": {"type": "string"},
+    "normalization": {"type": "string"}
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "challenge_id", "run_id", "method_id", "status",
+    "predicted_decision", "counterevidence_probability", "evidence",
+    "calls", "tokens", "ledger_head", "ledger_event_count", "ledger_relpath",
+    "prediction_commitment_sha256"
+  ],
+  "properties": {
+    "schema_version": {"type": "integer", "enum": [1]},
+    "challenge_id": {"type": "string"},
+    "run_id": {"type": "string"},
+    "method_id": {"type": "string"},
+    "status": {"type": "string", "enum": ["completed", "failed"]},
+    "predicted_decision": {
+      "type": "string",
+      "enum": ["SURVIVED", "NARROWED", "REFUTED", "UNRESOLVED"]
+    },
+    "counterevidence_probability": {"type": "number"},
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["doc_id", "relation", "locator", "content_sha256"],
+        "properties": {
+          "doc_id": {"type": "string"},
+          "relation": {
+            "type": "string",
+            "enum": ["SUPPORTS", "CONTRADICTS", "BOUNDS", "PRECEDENT_FOR"]
+          },
+          "locator": {
+            "type": "object",
+            "additionalProperties": false,
+            "anyOf": [{"required": ["offset"]}, {"required": ["page_no"]}],
+            "properties": {
+              "offset": {"type": "integer"},
+              "page_no": {"type": "integer"}
+            }
+          },
+          "content_sha256": {"type": "string"}
+        }
+      }
+    },
+    "calls": {"type": "integer"},
+    "tokens": {"type": "integer"},
+    "ledger_head": {"type": "string"},
+    "ledger_event_count": {"type": "integer"},
+    "ledger_relpath": {"type": "string"},
+    "prediction_commitment_sha256": {"type": "string"}
+  }
+}

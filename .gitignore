@@ -1,0 +1,15 @@
+.env
+config.json
+*.key
+*.pem
+*.db
+*.sqlite
+*.log
+*.ndjson
+runs/
+paper/
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+.DS_Store

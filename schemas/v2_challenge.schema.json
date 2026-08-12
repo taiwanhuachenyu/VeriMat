@@ -1,0 +1,81 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "challenge_id", "benchmark_track", "split",
+    "task_family", "leakage_group", "prompt", "cutoff_date",
+    "counterevidence_exists", "expected_decision", "accepted_evidence",
+    "construction_provenance"
+  ],
+  "properties": {
+    "schema_version": {"type": "integer", "enum": [1]},
+    "challenge_id": {"type": "string"},
+    "benchmark_track": {
+      "type": "string",
+      "enum": ["known_answer", "temporal_holdout"]
+    },
+    "split": {"type": "string", "enum": ["development", "test"]},
+    "task_family": {"type": "string"},
+    "leakage_group": {"type": "string"},
+    "prompt": {"type": "string"},
+    "cutoff_date": {"type": "string"},
+    "counterevidence_exists": {"type": "boolean"},
+    "expected_decision": {
+      "type": "string",
+      "enum": ["SURVIVED", "NARROWED", "REFUTED", "UNRESOLVED"]
+    },
+    "accepted_evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "evidence_id", "doc_id", "relation", "locator", "content_sha256",
+          "publication_date", "oracle_scope", "snapshot_id", "source_url", "doi",
+          "license_spdx", "source_locator"
+        ],
+        "properties": {
+          "evidence_id": {"type": "string"},
+          "doc_id": {"type": "string"},
+          "relation": {
+            "type": "string",
+            "enum": ["SUPPORTS", "CONTRADICTS", "BOUNDS", "PRECEDENT_FOR"]
+          },
+          "locator": {
+            "type": "object",
+            "additionalProperties": false,
+            "anyOf": [{"required": ["offset"]}, {"required": ["page_no"]}],
+            "properties": {
+              "offset": {"type": "integer"},
+              "page_no": {"type": "integer"}
+            }
+          },
+          "content_sha256": {"type": "string"},
+          "snapshot_id": {"type": "string"},
+          "source_url": {"type": "string"},
+          "doi": {"type": "string"},
+          "license_spdx": {"type": "string", "enum": ["CC-BY-4.0"]},
+          "source_locator": {"type": "string"},
+          "publication_date": {"type": "string"},
+          "oracle_scope": {
+            "type": "string",
+            "enum": ["available_by_cutoff", "post_cutoff_validation"]
+          }
+        }
+      }
+    },
+    "construction_provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "curator", "status"],
+      "properties": {
+        "source": {"type": "string"},
+        "curator": {"type": "string"},
+        "status": {
+          "type": "string",
+          "enum": ["draft", "independently_checked", "frozen"]
+        }
+      }
+    }
+  }
+}

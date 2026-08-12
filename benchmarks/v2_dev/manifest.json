@@ -1,0 +1,19 @@
+{
+  "challenge_file": "challenges.jsonl",
+  "challenge_sha256": "e9d935c96d571cb4ce40503d080feba02d64eaf2f47cdb93dfe13dede616e994",
+  "challenges": 10,
+  "counts": {
+    "known_answer:development": 10
+  },
+  "created_at": "2026-08-12T05:22:07.407669+00:00",
+  "curation_statuses": {
+    "draft": 10
+  },
+  "evidence_snapshot_file": "evidence_snapshots.jsonl",
+  "evidence_snapshot_sha256": "39cb74197a4365eb139c2b5c21f6bb3185ba613a2d62b440987079cbdf528316",
+  "leakage_groups": 9,
+  "publication_ready": false,
+  "referenced_snapshots": 10,
+  "schema_version": 1,
+  "snapshots": 10
+}
