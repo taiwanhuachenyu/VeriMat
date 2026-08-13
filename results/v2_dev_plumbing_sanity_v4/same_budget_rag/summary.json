@@ -1,0 +1,20 @@
+{
+  "brier_score": 0.6500000000000001,
+  "budget_compliance_rate": 1.0,
+  "challenge_sha256": "e9d935c96d571cb4ce40503d080feba02d64eaf2f47cdb93dfe13dede616e994",
+  "completed_rate": 1.0,
+  "counterevidence_false_positive_rate": 0.0,
+  "counterevidence_recall": 0.0,
+  "decision_accuracy": 0.2,
+  "disclaimer": "ENGINEERING PLUMBING SANITY ONLY. The backend is a deterministic rule fixture, the retriever searches benchmark evidence capsules, and these scores are not scientific baseline results and must not appear in a paper Results section.",
+  "ece_10": 0.7000000000000001,
+  "evidence_replay_precision": 0.2,
+  "method_id": "same_budget_rag",
+  "n": 10,
+  "prediction_sha256": "2b6610f6a0b324e859324f02306c1beabc721778752e81c62e261694d855d478",
+  "run_id": "v2-dev-plumbing-sanity-v4:same_budget_rag",
+  "schema_version": 1,
+  "scientific_result": false,
+  "total_calls": 10,
+  "total_tokens": 0
+}

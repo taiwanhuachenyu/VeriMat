@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "budget": {"max_calls": 24, "max_tokens": 30000},
+  "methods": [
+    {
+      "method_id": "same_budget_rag",
+      "support_retrieval": true,
+      "external_counter_retrieval": false,
+      "cedg": false,
+      "memory": "none",
+      "decision_mode": "direct"
+    },
+    {
+      "method_id": "rag_self_critic",
+      "support_retrieval": true,
+      "external_counter_retrieval": false,
+      "cedg": false,
+      "memory": "none",
+      "decision_mode": "self_critic"
+    },
+    {
+      "method_id": "retrieval_verifier",
+      "support_retrieval": true,
+      "external_counter_retrieval": true,
+      "cedg": false,
+      "memory": "none",
+      "decision_mode": "verifier"
+    },
+    {
+      "method_id": "cedg_no_memory",
+      "support_retrieval": true,
+      "external_counter_retrieval": true,
+      "cedg": true,
+      "memory": "none",
+      "decision_mode": "verifier"
+    },
+    {
+      "method_id": "cedg_uncredited_replay",
+      "support_retrieval": true,
+      "external_counter_retrieval": true,
+      "cedg": true,
+      "memory": "uncredited_replay",
+      "decision_mode": "verifier"
+    },
+    {
+      "method_id": "cedg_delayed_credit",
+      "support_retrieval": true,
+      "external_counter_retrieval": true,
+      "cedg": true,
+      "memory": "delayed_external_credit",
+      "decision_mode": "verifier"
+    }
+  ]
+}

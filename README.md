@@ -31,6 +31,14 @@ python examples/pareto_mcts_demo.py
 The bundled development benchmark validates software plumbing only. It is not evidence
 of a new materials discovery or open-world scientific performance.
 
+## Reproducible experiment
+
+The complete offline experiment runner, method registry, per-task predictions, scored outputs,
+aggregate summaries, statistical comparison, and figure source are included in `experiments/`
+and `results/`. See [`experiments/README.md`](experiments/README.md) for the exact command.
+
+![Development benchmark summary](results/v2_dev_plumbing_sanity_v4/figures/dev_benchmark_summary.png)
+
 ## License
 
 VeriMat is released under the [MIT License](LICENSE).

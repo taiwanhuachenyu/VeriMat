@@ -1,0 +1,597 @@
+{
+  "benchmark_manifest_sha256": "1c4f5aea83f16623c7a8def3189ea04f024e93c053b7aa0b2738c4f0aff5b107",
+  "bootstrap_iterations": 10000,
+  "challenge_sha256": "e9d935c96d571cb4ce40503d080feba02d64eaf2f47cdb93dfe13dede616e994",
+  "cluster_unit": "leakage_group",
+  "comparisons": [
+    {
+      "metrics": [
+        {
+          "ci_95_cluster_bootstrap": [
+            -1.0,
+            -0.4444444444444444
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": -0.7222222222222222,
+          "higher_is_better": true,
+          "metric": "decision_accuracy",
+          "observations": 10,
+          "p_value_holm": 0.09375,
+          "p_value_raw": 0.015625,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            -0.875,
+            -0.25
+          ],
+          "clusters": 8,
+          "effect_treatment_minus_reference": -0.625,
+          "higher_is_better": true,
+          "metric": "counterevidence_recall",
+          "observations": 8,
+          "p_value_holm": 0.3125,
+          "p_value_raw": 0.0625,
+          "permutations": 256,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 2,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": false,
+          "metric": "counterevidence_false_positive_rate",
+          "observations": 2,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 4,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            -0.7777777777777778,
+            -0.2222222222222222
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": -0.5,
+          "higher_is_better": true,
+          "metric": "evidence_replay_precision",
+          "observations": 10,
+          "p_value_holm": 0.3125,
+          "p_value_raw": 0.0625,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.4888888888888888,
+            0.7999999999999999
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": 0.6666666666666666,
+          "higher_is_better": false,
+          "metric": "brier_score",
+          "observations": 10,
+          "p_value_holm": 0.0546875,
+          "p_value_raw": 0.0078125,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": true,
+          "metric": "completed_rate",
+          "observations": 10,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": true,
+          "metric": "budget_compliance_rate",
+          "observations": 10,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        }
+      ],
+      "reference": "retrieval_verifier",
+      "treatment": "same_budget_rag"
+    },
+    {
+      "metrics": [
+        {
+          "ci_95_cluster_bootstrap": [
+            -1.0,
+            -0.4444444444444444
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": -0.7222222222222222,
+          "higher_is_better": true,
+          "metric": "decision_accuracy",
+          "observations": 10,
+          "p_value_holm": 0.09375,
+          "p_value_raw": 0.015625,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            -0.875,
+            -0.25
+          ],
+          "clusters": 8,
+          "effect_treatment_minus_reference": -0.625,
+          "higher_is_better": true,
+          "metric": "counterevidence_recall",
+          "observations": 8,
+          "p_value_holm": 0.3125,
+          "p_value_raw": 0.0625,
+          "permutations": 256,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 2,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": false,
+          "metric": "counterevidence_false_positive_rate",
+          "observations": 2,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 4,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            -0.7777777777777778,
+            -0.2222222222222222
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": -0.5,
+          "higher_is_better": true,
+          "metric": "evidence_replay_precision",
+          "observations": 10,
+          "p_value_holm": 0.3125,
+          "p_value_raw": 0.0625,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.4888888888888888,
+            0.7999999999999999
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": 0.6666666666666666,
+          "higher_is_better": false,
+          "metric": "brier_score",
+          "observations": 10,
+          "p_value_holm": 0.0546875,
+          "p_value_raw": 0.0078125,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": true,
+          "metric": "completed_rate",
+          "observations": 10,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": true,
+          "metric": "budget_compliance_rate",
+          "observations": 10,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        }
+      ],
+      "reference": "retrieval_verifier",
+      "treatment": "rag_self_critic"
+    },
+    {
+      "metrics": [
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": true,
+          "metric": "decision_accuracy",
+          "observations": 10,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 8,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": true,
+          "metric": "counterevidence_recall",
+          "observations": 8,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 256,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 2,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": false,
+          "metric": "counterevidence_false_positive_rate",
+          "observations": 2,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 4,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": true,
+          "metric": "evidence_replay_precision",
+          "observations": 10,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": false,
+          "metric": "brier_score",
+          "observations": 10,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": true,
+          "metric": "completed_rate",
+          "observations": 10,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": true,
+          "metric": "budget_compliance_rate",
+          "observations": 10,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        }
+      ],
+      "reference": "retrieval_verifier",
+      "treatment": "cedg_no_memory"
+    },
+    {
+      "metrics": [
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": true,
+          "metric": "decision_accuracy",
+          "observations": 10,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 8,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": true,
+          "metric": "counterevidence_recall",
+          "observations": 8,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 256,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 2,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": false,
+          "metric": "counterevidence_false_positive_rate",
+          "observations": 2,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 4,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": true,
+          "metric": "evidence_replay_precision",
+          "observations": 10,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": false,
+          "metric": "brier_score",
+          "observations": 10,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": true,
+          "metric": "completed_rate",
+          "observations": 10,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": true,
+          "metric": "budget_compliance_rate",
+          "observations": 10,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        }
+      ],
+      "reference": "retrieval_verifier",
+      "treatment": "cedg_uncredited_replay"
+    },
+    {
+      "metrics": [
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": true,
+          "metric": "decision_accuracy",
+          "observations": 10,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 8,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": true,
+          "metric": "counterevidence_recall",
+          "observations": 8,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 256,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 2,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": false,
+          "metric": "counterevidence_false_positive_rate",
+          "observations": 2,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 4,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": true,
+          "metric": "evidence_replay_precision",
+          "observations": 10,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": false,
+          "metric": "brier_score",
+          "observations": 10,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": true,
+          "metric": "completed_rate",
+          "observations": 10,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        },
+        {
+          "ci_95_cluster_bootstrap": [
+            0.0,
+            0.0
+          ],
+          "clusters": 9,
+          "effect_treatment_minus_reference": 0.0,
+          "higher_is_better": true,
+          "metric": "budget_compliance_rate",
+          "observations": 10,
+          "p_value_holm": 1.0,
+          "p_value_raw": 1.0,
+          "permutations": 512,
+          "test": "exact_cluster_sign_flip"
+        }
+      ],
+      "reference": "retrieval_verifier",
+      "treatment": "cedg_delayed_credit"
+    }
+  ],
+  "created_at": "2026-08-12T05:33:07.153867+00:00",
+  "disclaimer": "Confirmatory comparison requires a publication-ready benchmark and non-sanity method inputs. Current inputs do not satisfy that gate.",
+  "effect_definition": "treatment minus reference; inspect higher_is_better",
+  "inputs": {
+    "cedg_delayed_credit": {
+      "per_challenge_sha256": "8c5d76b6c6bbafefe14088e140749d8ee196954042feb5dba793aaa7724f4f31",
+      "summary_sha256": "23b2681a0a88a4c982e490fe12baa514d6f46852843d9ecd88b39c740cefc630"
+    },
+    "cedg_no_memory": {
+      "per_challenge_sha256": "8c5d76b6c6bbafefe14088e140749d8ee196954042feb5dba793aaa7724f4f31",
+      "summary_sha256": "f90b6d66c5210bac5ab813456077aa1ca1dc44d9e4e841db0785459bc345f249"
+    },
+    "cedg_uncredited_replay": {
+      "per_challenge_sha256": "8c5d76b6c6bbafefe14088e140749d8ee196954042feb5dba793aaa7724f4f31",
+      "summary_sha256": "d0c03852ab178bf2a2aef8f745c544ffa906c9787dc463e65ab32e7ffcdac94d"
+    },
+    "rag_self_critic": {
+      "per_challenge_sha256": "210c73ba6a0dae862c6935bfdad5f9cca18d4a13154d904cfbb08f30ff765ae3",
+      "summary_sha256": "4277c20746fc56b4cdf2f05c7c07649df67be81cc61413232547e334ced8037b"
+    },
+    "retrieval_verifier": {
+      "per_challenge_sha256": "8c5d76b6c6bbafefe14088e140749d8ee196954042feb5dba793aaa7724f4f31",
+      "summary_sha256": "ec40eeb0f1bdb5b869008f731f2243d2e3750699d87d5e8901c375bc1d8dea69"
+    },
+    "same_budget_rag": {
+      "per_challenge_sha256": "210c73ba6a0dae862c6935bfdad5f9cca18d4a13154d904cfbb08f30ff765ae3",
+      "summary_sha256": "8f4775cec780dfeeb70db4544dadd6b5e3225bc78f273631898e3c18e3803704"
+    }
+  },
+  "multiplicity": "Holm correction within each treatment/reference comparison",
+  "reference": "retrieval_verifier",
+  "schema_version": 1,
+  "scientific_result": false,
+  "seed": 20260812
+}

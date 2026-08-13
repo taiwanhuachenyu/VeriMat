@@ -1,0 +1,74 @@
+{
+  "blind_task_sha256": "411591bbe4b75b48c4d24c4d7d7d7207ff0a2a187e7dcc3bbe36772ed32dc1c7",
+  "challenge_sha256": "e9d935c96d571cb4ce40503d080feba02d64eaf2f47cdb93dfe13dede616e994",
+  "created_at": "2026-08-12T05:32:53.535187+00:00",
+  "disclaimer": "ENGINEERING PLUMBING SANITY ONLY. The backend is a deterministic rule fixture, the retriever searches benchmark evidence capsules, and these scores are not scientific baseline results and must not appear in a paper Results section.",
+  "evidence_snapshot_sha256": "39cb74197a4365eb139c2b5c21f6bb3185ba613a2d62b440987079cbdf528316",
+  "method_registry_sha256": "ec9ee0f8b6bd9e417db2c983b0432801d04d5f97bfe3684f622dd894223d6244",
+  "methods": [
+    {
+      "budget": {
+        "max_calls": 24,
+        "max_tokens": 30000
+      },
+      "ledger_root": "same_budget_rag/ledgers",
+      "method_id": "same_budget_rag",
+      "prediction_sha256": "2b6610f6a0b324e859324f02306c1beabc721778752e81c62e261694d855d478",
+      "predictions": "same_budget_rag/predictions.jsonl",
+      "summary": "same_budget_rag/summary.json",
+      "summary_sha256": "8f4775cec780dfeeb70db4544dadd6b5e3225bc78f273631898e3c18e3803704",
+      "tasks_completed": 10
+    },
+    {
+      "budget": {
+        "max_calls": 24,
+        "max_tokens": 30000
+      },
+      "ledger_root": "rag_self_critic/ledgers",
+      "method_id": "rag_self_critic",
+      "prediction_sha256": "08f050e5b919c5799aa872491636763b690ebc5a5450fd59c9f2c100bc47e801",
+      "predictions": "rag_self_critic/predictions.jsonl",
+      "summary": "rag_self_critic/summary.json",
+      "summary_sha256": "4277c20746fc56b4cdf2f05c7c07649df67be81cc61413232547e334ced8037b",
+      "tasks_completed": 10
+    },
+    {
+      "budget": {
+        "max_calls": 24,
+        "max_tokens": 30000
+      },
+      "ledger_root": "retrieval_verifier/ledgers",
+      "method_id": "retrieval_verifier",
+      "prediction_sha256": "83f988a9bae40aab9acd2a82e34d811feb80966f8c8539a6fc4dad0ba4347ee0",
+      "predictions": "retrieval_verifier/predictions.jsonl",
+      "summary": "retrieval_verifier/summary.json",
+      "summary_sha256": "ec40eeb0f1bdb5b869008f731f2243d2e3750699d87d5e8901c375bc1d8dea69",
+      "tasks_completed": 10
+    },
+    {
+      "budget": {
+        "max_calls": 24,
+        "max_tokens": 30000
+      },
+      "ledger_root": "cedg_no_memory/ledgers",
+      "method_id": "cedg_no_memory",
+      "prediction_sha256": "9e32b9b31887d1d3b9e10ca7e53b47962d459972480c9d0fe184d17e5ad97ff8",
+      "predictions": "cedg_no_memory/predictions.jsonl",
+      "summary": "cedg_no_memory/summary.json",
+      "summary_sha256": "f90b6d66c5210bac5ab813456077aa1ca1dc44d9e4e841db0785459bc345f249",
+      "tasks_completed": 10
+    }
+  ],
+  "run_id": "v2-dev-plumbing-sanity-v4",
+  "runtime": {
+    "implementation_sha256": {
+      "experiments/run_v2_plumbing_sanity.py": "4f7d517a96a6fc7b0fde4a9c2e60162dd5ccf97b57ee5d367625ff80185827b7",
+      "src/evaluation/baseline_runner.py": "8518c06004178476c610784da299e00b630106665266c6b222cbc3696075edcc",
+      "src/evaluation/offline_sanity.py": "a6128dbe377e028930878dfe3d5fb9f8bff9f3c678058ba724a9be8781a88826",
+      "src/orchestration/worker.py": "608d78bae6f6f606c91db7519ab47931cf941a11901e3ddc0cd1f866ea0b7b82"
+    },
+    "python": "3.10.15"
+  },
+  "schema_version": 1,
+  "scientific_result": false
+}
