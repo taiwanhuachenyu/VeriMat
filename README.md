@@ -133,3 +133,27 @@ and figure source are in `experiments/` and `results/`; see
 ## License
 
 VeriMat is released under the [MIT License](LICENSE).
+
+## Evidence-grounded literature survey
+
+The thermoelectric survey pipeline is under `src/survey/`. It uses Sciverse metadata search
+for a hard candidate scope, then scoped semantic retrieval for passages. Every extracted
+structure-property relation carries a passage quote, document identifier, database name,
+content digest, and query identifier. The gap stage applies deterministic detectors first;
+the selected model route only narrates and classifies those candidates.
+
+The extraction and gap stages are guarded by deterministic checks: the cited passage must
+have been exposed, the quote must occur literally, and every reported numeric token must be
+present in that quote. `src/survey/report.py` emits `survey.tex`, `references.bib`, JSON
+sidecars, and a verification audit. The report writer refuses to write an unverified bundle.
+The generated LaTeX source and BibTeX file are the submission sources; compile them with
+`build.py` or `make` after installing a TeX distribution:
+
+```bash
+python build.py
+```
+
+The report date is an explicit input rather than `\today`, and the generated build pins
+`SOURCE_DATE_EPOCH` so repeated builds are comparable. The default author is
+`taiwanhuachenyu`. API credentials remain environment-only; never place `SCIVERSE_API_TOKEN`
+in a report, fixture, commit, or evidence log.
