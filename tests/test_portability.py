@@ -1,6 +1,7 @@
 """The POSIX and Windows lock backends must expose the same observable contract."""
 from __future__ import annotations
 
+import errno
 import os
 import sqlite3
 import threading
@@ -89,10 +90,17 @@ def test_fsync_directory_accepts_a_directory(tmp_path):
 
 
 def test_fsync_directory_rejects_a_file(tmp_path):
+    """A file here means the caller thinks it took a rename barrier that was never taken.
+
+    Both platforms have to refuse it the same way, or the durability contract depends on where
+    the code runs: POSIX lets the kernel refuse during the open, Windows checks the type, and a
+    caller reading ``errno`` sees ``ENOTDIR`` either way.
+    """
     target = tmp_path / "not-a-directory"
     target.write_text("x", encoding="utf-8")
-    with pytest.raises(OSError):
+    with pytest.raises(NotADirectoryError) as caught:
         portability.fsync_directory(target)
+    assert caught.value.errno == errno.ENOTDIR
 
 
 def test_private_append_round_trips_without_newline_translation(tmp_path):

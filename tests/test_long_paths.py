@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from src.core.portability import WINDOWS, extended_path
+from src.core.portability import WINDOWS, extended_path, fsync_directory
 from src.evaluation.circuit_breaker import PersistentCircuitBreaker
 from src.evidence.ledger import EventLedger
 from src.learning.policy_store import PolicyStore
@@ -139,6 +139,18 @@ def test_the_jsonl_tool_round_trips_past_the_limit(tmp_path):
     target = deep / "rows.jsonl"
     jsonl_ops.write_jsonl([{"doc_id": "one"}, {"doc_id": "two"}], str(target))
     assert jsonl_ops.read_jsonl(str(target)) == [{"doc_id": "one"}, {"doc_id": "two"}]
+
+
+def test_the_rename_barrier_holds_past_the_limit(tmp_path):
+    """The durable-rename barrier is taken on directories the store itself created.
+
+    A bare ``is_dir`` answers False for a path over the limit -- it swallows the ``OSError``
+    rather than reporting it -- so the type guard inside ``fsync_directory`` would reject the
+    content-addressed store's own directories and fail every durable write on a deep root.
+    """
+    deep = _deep(tmp_path)
+    extended_path(deep).mkdir(parents=True)
+    fsync_directory(deep)
 
 
 # --------------------------------------------------------------------- structural guard

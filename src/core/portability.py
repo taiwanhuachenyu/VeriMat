@@ -71,7 +71,21 @@ if not WINDOWS:
         fcntl.flock(_descriptor(target), fcntl.LOCK_UN)
 
     def fsync_directory(path: str | os.PathLike[str]) -> None:
-        descriptor = os.open(path, os.O_RDONLY)
+        """Flush a directory entry so a rename into it survives a crash.
+
+        ``O_DIRECTORY`` is what makes a non-directory an error here. Without it Linux flushes a
+        regular file without complaint -- ``fsync`` accepts a read-only descriptor -- and the
+        caller walks away believing it holds a rename barrier that was never taken; the Windows
+        branch raises on the same mistake, so the guarantee would differ by platform. Letting the
+        kernel refuse during the open also beats a preceding ``stat``, which can describe a
+        different inode than the one that ends up flushed, and which would not stop
+        ``os.open`` from blocking on a fifo.
+
+        The flag is read directly rather than through ``getattr``: it is POSIX.1-2008 and present
+        wherever CPython builds a posix module, and a host that genuinely lacks it cannot make
+        this guarantee at all. Failing at import is the honest outcome there.
+        """
+        descriptor = os.open(path, os.O_RDONLY | os.O_DIRECTORY)
         try:
             os.fsync(descriptor)
         finally:
@@ -154,9 +168,15 @@ else:
         parent descriptor has no counterpart -- ``FlushFileBuffers`` requires write access, which
         a directory handle cannot be granted. ``DIRECTORY_FSYNC_SUPPORTED`` reports this so the
         weaker guarantee reaches the run manifest instead of being assumed away.
+
+        The type check is not decoration: it keeps the misuse that ``O_DIRECTORY`` catches on
+        POSIX an error here too, with the same ``ENOTDIR``, so a caller cannot depend on a
+        platform quietly accepting a file. It goes through ``extended_path`` because a bare
+        ``is_dir`` swallows the ``OSError`` a path over 260 characters raises and answers False,
+        which would turn the content-addressed store's own directories into spurious failures.
         """
-        if not Path(path).is_dir():
-            raise NotADirectoryError(str(path))
+        if not extended_path(path).is_dir():
+            raise NotADirectoryError(errno.ENOTDIR, os.strerror(errno.ENOTDIR), str(path))
 
     _APPEND_FLAGS = os.O_WRONLY | os.O_APPEND | os.O_BINARY | os.O_NOINHERIT
     _CREATE_FLAGS = os.O_WRONLY | os.O_APPEND | os.O_CREAT | os.O_BINARY | os.O_NOINHERIT

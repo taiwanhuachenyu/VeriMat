@@ -62,7 +62,9 @@ a final job fails the build if the platforms disagree on the digest of the examp
 
 Three differences are handled rather than assumed away. File locking uses `LockFileEx` on
 Windows and `fcntl` elsewhere. A directory cannot be fsynced from user mode on Windows, so
-the rename durability barrier is platform-specific. Paths beyond 260 characters need the
+the rename durability barrier is platform-specific; both platforms still refuse a
+non-directory with the same `ENOTDIR`, so no caller can come to rely on one of them quietly
+accepting a file. Paths beyond 260 characters need the
 `\\?\` prefix on a default Windows install, so every filesystem entry point converts through
 `extended_path`. `tests/test_long_paths.py` fails if a new entry point skips it, and CI first
 proves the limit is genuinely in force on the runner, so those tests cannot pass by accident.
