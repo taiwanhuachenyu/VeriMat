@@ -42,6 +42,11 @@ jobs:
       # observed here and recorded in the run summary rather than assumed from the platform name.
       - name: Prove the path-length limit is real before the suite clears it
         shell: python
+        env:
+          # `shell: python` writes the script to RUNNER_TEMP and runs it from there, so sys.path[0]
+          # is the temp directory and the repository is not importable. `python -c` gets the working
+          # directory for free; a script file does not.
+          PYTHONPATH: .
         run: |
           import os, shutil, sys, tempfile
           from src.core.portability import extended_path
