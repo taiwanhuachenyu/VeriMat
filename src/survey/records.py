@@ -14,12 +14,14 @@ report can be regenerated without renumbering every citation.
 from __future__ import annotations
 
 import hashlib
+from pathlib import Path
 import re
 from dataclasses import dataclass, field
 from typing import Any, Iterable
 
 from src.core.events import canonical_json
 from src.evidence.graph import Passage
+from src.core.portability import extended_path
 
 DATABASE_SCIVERSE = "Sciverse"
 
@@ -477,3 +479,88 @@ class SurveyCorpus:
             ),
             "year_span": [years[0], years[-1]] if years else [],
         }
+
+    def snapshot(self) -> dict[str, Any]:
+        """Return a deterministic, content-addressed copy of the complete corpus."""
+        self.validate()
+        payload = {
+            "schema_version": 1,
+            "topic": {
+                "topic_id": self.topic.topic_id, "title": self.topic.title,
+                "seed_queries": list(self.topic.seed_queries),
+                "probe_questions": list(self.topic.probe_questions),
+                "year_from": self.topic.year_from, "year_to": self.topic.year_to,
+                "language": self.topic.language, "domain": self.topic.domain,
+            },
+            "documents": [
+                {"doc_id": item.doc_id, "unique_id": item.unique_id, "title": item.title,
+                 "year": item.year, "venue": item.venue, "doi": item.doi,
+                 "citation_count": item.citation_count, "database": item.database}
+                for _, item in sorted(self.documents.items())
+            ],
+            "queries": [
+                {"query_id": item.query_id, "text": item.text, "stage": item.stage,
+                 "intent": item.intent, "n_hits": item.n_hits,
+                 "total_matched": item.total_matched,
+                 "filters_fingerprint": item.filters_fingerprint,
+                 "saturated": item.saturated, "database": item.database}
+                for _, item in sorted(self.queries.items())
+            ],
+            "passages": [
+                {"passage_id": item.passage_id, "doc_id": item.doc_id,
+                 "query_id": item.query_id, "text": item.text,
+                 "content_sha256": item.content_sha256, "offset": item.offset,
+                 "page_no": item.page_no, "score": item.score,
+                 "retrieved_by": item.retrieved_by, "database": item.database}
+                for _, item in sorted(self.passages.items())
+            ],
+        }
+        payload["manifest"] = self.manifest()
+        payload["payload_sha256"] = hashlib.sha256(
+            canonical_json(payload).encode("utf-8")
+        ).hexdigest()
+        return payload
+
+    def write_snapshot(self, path: str | Path) -> str:
+        """Write a canonical snapshot and return its payload digest."""
+        target = extended_path(path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        snapshot = self.snapshot()
+        target.write_text(canonical_json(snapshot) + "\n", encoding="utf-8", newline="\n")
+        return snapshot["payload_sha256"]
+
+    @classmethod
+    def from_snapshot(cls, payload: dict[str, Any]) -> "SurveyCorpus":
+        """Rebuild and validate a corpus snapshot, including its top-level digest."""
+        if not isinstance(payload, dict) or payload.get("schema_version") != 1:
+            raise SurveyContractError("unsupported survey corpus snapshot")
+        expected = payload.get("payload_sha256")
+        unsigned = dict(payload)
+        unsigned.pop("payload_sha256", None)
+        actual = hashlib.sha256(canonical_json(unsigned).encode("utf-8")).hexdigest()
+        if expected != actual:
+            raise SurveyContractError("survey corpus snapshot digest mismatch")
+        topic_value = payload.get("topic")
+        if not isinstance(topic_value, dict):
+            raise SurveyContractError("survey snapshot topic is invalid")
+        topic = SurveyTopic(
+            topic_id=topic_value.get("topic_id", ""), title=topic_value.get("title", ""),
+            seed_queries=tuple(topic_value.get("seed_queries", ())),
+            probe_questions=tuple(topic_value.get("probe_questions", ())),
+            year_from=topic_value.get("year_from"), year_to=topic_value.get("year_to"),
+            language=topic_value.get("language", "en"), domain=topic_value.get("domain", ""),
+        )
+        corpus = cls(topic=topic)
+        for value in payload.get("documents", ()):
+            corpus.add_document(DocumentRecord(**value))
+        for value in payload.get("queries", ()):
+            corpus.add_query(QueryRecord(**value))
+        for value in payload.get("passages", ()):
+            corpus.add_passage(SurveyPassage(**value))
+        corpus.validate()
+        return corpus
+
+    @classmethod
+    def read_snapshot(cls, path: str | Path) -> "SurveyCorpus":
+        import json
+        return cls.from_snapshot(json.loads(extended_path(path).read_text(encoding="utf-8")))

@@ -330,6 +330,11 @@ def open_route(
             f"the {ROUTE_OPENCODE} transport records usage in its own operation table and"
             " accepts no usage_log"
         )
+    unsupported = sorted(set(transport_kwargs) - {"timeout_seconds"})
+    if unsupported:
+        raise RouteConfigurationError(
+            f"the {ROUTE_OPENCODE} transport does not accept: {', '.join(unsupported)}"
+        )
     return _opencode_selection(
         operation_db=operation_db, env=environment,
         operator_declared_backend=operator_declared_backend,

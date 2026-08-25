@@ -244,3 +244,28 @@ def test_invalid_bounds_are_refused(tmp_path):
             operation_db=tmp_path / "operations.db", cli_path="fake-claude",
             timeout_seconds=0,
         )
+
+
+def test_indeterminate_envelope_is_audited_without_committing_operation(tmp_path):
+    envelope = _envelope()
+    envelope.pop("structured_output")
+    transport = FakeTransport(
+        tmp_path, [envelope], request_response_log=tmp_path / "requests.jsonl",
+    )
+    with pytest.raises(IndeterminateModelOperation, match="no structured object"):
+        _call(transport)
+    records = [json.loads(line) for line in (
+        tmp_path / "requests.jsonl"
+    ).read_text(encoding="utf-8").splitlines()]
+    assert records == [
+        {
+            **records[0],
+            "status": "INDETERMINATE",
+            "operation_id": "operation",
+            "result_envelope": envelope,
+        },
+    ]
+    assert records[0]["response_text"] is None
+    with pytest.raises(IndeterminateModelOperation, match="PENDING"):
+        _call(transport)
+    assert len(transport.invocations) == 1

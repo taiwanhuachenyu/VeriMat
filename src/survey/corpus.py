@@ -129,6 +129,7 @@ class CorpusBuilder:
         self, *, source: LiteratureSource, max_candidates: int = 120,
         semantic_top_k: int = SEMANTIC_TOP_K, min_passage_chars: int = 200,
         scope_shard_size: int = SCOPE_SHARD_SIZE, citation_floor: int = CITATION_FLOOR,
+        document_probe_templates: tuple[str, ...] = (),
     ):
         if max_candidates < 1:
             raise SurveyContractError("a survey needs at least one candidate document")
@@ -145,6 +146,7 @@ class CorpusBuilder:
         self.min_passage_chars = min_passage_chars
         self.scope_shard_size = scope_shard_size
         self.citation_floor = citation_floor
+        self.document_probe_templates = tuple(document_probe_templates)
 
     # ------------------------------------------------------------------- stage one: candidates
     def _passes(self, topic: SurveyTopic) -> tuple[tuple[str, list[dict[str, Any]]], ...]:
@@ -251,11 +253,46 @@ class CorpusBuilder:
                     saturated=len(hits) >= SATURATION_TOP_K,
                 ))
 
+    def _document_probe_stage(self, topic: SurveyTopic, corpus: SurveyCorpus) -> None:
+        if not self.document_probe_templates:
+            return
+        for doc_id in sorted(corpus.documents):
+            record = corpus.documents[doc_id]
+            for template in self.document_probe_templates:
+                question = str(template).format(
+                    title=record.title, year=record.year or "", venue=record.venue,
+                    doi=record.doi, unique_id=record.unique_id, domain=topic.domain,
+                )
+                hits = self.source.agentic_search(
+                    question, top_k=self.semantic_top_k,
+                    filters=semantic_filters(doc_ids=[doc_id]),
+                )
+                query_id = digest_id("qry", "semantic-document", question, doc_id)
+                for hit in hits:
+                    hit_doc_id = _text(hit.get("doc_id"))
+                    body = _text(hit.get("chunk") or hit.get("text") or hit.get("content"))
+                    if hit_doc_id != doc_id or len(body) < self.min_passage_chars:
+                        continue
+                    score = hit.get("score")
+                    corpus.add_passage(SurveyPassage.build(
+                        doc_id=doc_id, query_id=query_id, text=body,
+                        offset=_non_negative(hit.get("offset")),
+                        page_no=_non_negative(hit.get("page_no")),
+                        score=float(score) if isinstance(score, (int, float)) else None,
+                    ))
+                corpus.add_query(QueryRecord(
+                    query_id=query_id, text=question, stage="semantic",
+                    intent="document_evidence", n_hits=len(hits),
+                    filters_fingerprint=digest_id("flt", [doc_id]),
+                    saturated=len(hits) >= SATURATION_TOP_K,
+                ))
+
     def build(self, topic: SurveyTopic) -> SurveyCorpus:
         topic.validate()
         corpus = SurveyCorpus(topic=topic)
         self._candidate_stage(topic, corpus)
         self._evidence_stage(topic, corpus)
+        self._document_probe_stage(topic, corpus)
         corpus.validate()
         return corpus
 
@@ -276,6 +313,9 @@ def coverage_report(corpus: SurveyCorpus) -> dict[str, Any]:
     empty_queries = sorted(
         record.text for record in corpus.queries.values() if record.n_hits == 0
     )
+    document_queries = [
+        record for record in corpus.queries.values() if record.intent == "document_evidence"
+    ]
     return {
         **corpus.manifest(),
         "n_documents_with_evidence": len(documents_with_evidence),
@@ -286,6 +326,8 @@ def coverage_report(corpus: SurveyCorpus) -> dict[str, Any]:
             "max": max(per_document.values()) if per_document else 0,
         },
         "queries_returning_nothing": empty_queries,
+        "n_document_probes": len(document_queries),
+        "n_empty_document_probes": sum(1 for record in document_queries if record.n_hits == 0),
         "protocol": {
             "stage_one": "relevance-ranked metadata search, hard filters, no sort",
             "stage_one_passes": ["coverage", "seminal"],
@@ -298,5 +340,7 @@ def coverage_report(corpus: SurveyCorpus) -> dict[str, Any]:
                 f"{SCOPE_SHARD_SIZE}, top_k={SEMANTIC_TOP_K} per slice"
             ),
             "scope_is_enforced_server_side": True,
+            "document_probes": bool(document_queries),
+            "document_probe_count": len(document_queries),
         },
     }

@@ -1,0 +1,247 @@
+{
+  "meta_search_accepted": [
+    "cursor",
+    "facets",
+    "fields",
+    "filters",
+    "page",
+    "page_size",
+    "query",
+    "sort"
+  ],
+  "meta_search_types": {
+    "query": "string_type: Input should be a valid string",
+    "filters": "list_type: Input should be a valid list",
+    "sort": "list_type: Input should be a valid list",
+    "fields": "list_type: Input should be a valid list",
+    "page": "int_type: Input should be a valid integer",
+    "page_size": "int_type: Input should be a valid integer",
+    "cursor": "string_type: Input should be a valid string",
+    "facets": "list_type: Input should be a valid list"
+  },
+  "meta_search_rejected": [
+    "access_is_oa",
+    "aggregations",
+    "aggs",
+    "author",
+    "citation_count",
+    "count",
+    "doc_id",
+    "doi",
+    "exclude",
+    "expand",
+    "explain",
+    "highlight",
+    "id",
+    "ids",
+    "include_facets",
+    "keywords",
+    "lang",
+    "language",
+    "max_year",
+    "metadata_type",
+    "min_year",
+    "mode",
+    "must",
+    "next_cursor",
+    "open_access",
+    "operator",
+    "rerank",
+    "return_facets",
+    "search_mode",
+    "seed",
+    "should",
+    "sort_order",
+    "sub_queries",
+    "timeout",
+    "topics",
+    "total_count",
+    "type",
+    "unique_id",
+    "venue",
+    "year",
+    "year_from",
+    "year_to"
+  ],
+  "agentic_field_probes": {
+    "__definitely_not_a_field__": {
+      "status": 200,
+      "code": "SUCCESS",
+      "hits": 1
+    },
+    "sub_queries": {
+      "status": 200,
+      "code": "SUCCESS",
+      "hits": 1
+    },
+    "filters": {
+      "status": 200,
+      "code": "SUCCESS",
+      "hits": 1
+    },
+    "filters_as_list": {
+      "status": 400,
+      "code": "INVALID_REQUEST",
+      "hits": null
+    },
+    "page": {
+      "status": 200,
+      "code": "SUCCESS",
+      "hits": 1
+    },
+    "page_size": {
+      "status": 200,
+      "code": "SUCCESS",
+      "hits": 1
+    },
+    "offset": {
+      "status": 200,
+      "code": "SUCCESS",
+      "hits": 1
+    },
+    "rerank": {
+      "status": 200,
+      "code": "SUCCESS",
+      "hits": 1
+    },
+    "fields": {
+      "status": 200,
+      "code": "SUCCESS",
+      "hits": 1
+    },
+    "sort": {
+      "status": 200,
+      "code": "SUCCESS",
+      "hits": 1
+    },
+    "cursor": {
+      "status": 200,
+      "code": "SUCCESS",
+      "hits": 1
+    }
+  },
+  "agentic_top_k": {
+    "1": {
+      "status": 200,
+      "code": "SUCCESS",
+      "hits": 1
+    },
+    "10": {
+      "status": 200,
+      "code": "SUCCESS",
+      "hits": 10
+    },
+    "20": {
+      "status": 200,
+      "code": "SUCCESS",
+      "hits": 20
+    },
+    "30": {
+      "status": 200,
+      "code": "SUCCESS",
+      "hits": 30
+    },
+    "50": {
+      "status": 200,
+      "code": "SUCCESS",
+      "hits": 50
+    },
+    "51": {
+      "status": 200,
+      "code": "SUCCESS",
+      "hits": 50
+    },
+    "100": {
+      "status": 200,
+      "code": "SUCCESS",
+      "hits": 50
+    },
+    "101": {
+      "status": 400,
+      "code": "INVALID_TOP_K",
+      "hits": null
+    }
+  },
+  "content": {
+    "doc_id only": {
+      "status": 200,
+      "code": "SUCCESS",
+      "keys": [
+        "biz_code",
+        "bytes_returned",
+        "code",
+        "message",
+        "more",
+        "next_offset",
+        "request_tokens",
+        "response_tokens",
+        "text"
+      ],
+      "text_len": 61589
+    },
+    "doc_id+offset+limit": {
+      "status": 200,
+      "code": "SUCCESS",
+      "keys": [
+        "biz_code",
+        "bytes_returned",
+        "code",
+        "message",
+        "more",
+        "next_offset",
+        "request_tokens",
+        "response_tokens",
+        "text"
+      ],
+      "text_len": 512
+    },
+    "limit huge": {
+      "status": 200,
+      "code": "SUCCESS",
+      "keys": [
+        "biz_code",
+        "bytes_returned",
+        "code",
+        "message",
+        "more",
+        "next_offset",
+        "request_tokens",
+        "response_tokens",
+        "text"
+      ],
+      "text_len": 61589
+    },
+    "negative offset": {
+      "status": 400,
+      "code": "INVALID_REQUEST",
+      "keys": [
+        "error"
+      ],
+      "text_len": null
+    },
+    "unknown param": {
+      "status": 200,
+      "code": "SUCCESS",
+      "keys": [
+        "biz_code",
+        "bytes_returned",
+        "code",
+        "message",
+        "more",
+        "next_offset",
+        "request_tokens",
+        "response_tokens",
+        "text"
+      ],
+      "text_len": 61589
+    },
+    "bad doc_id": {
+      "status": 404,
+      "code": "CONTENT_NOT_FOUND",
+      "keys": [
+        "error"
+      ],
+      "text_len": null
+    }
+  }
+}

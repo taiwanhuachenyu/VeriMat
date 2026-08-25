@@ -186,3 +186,56 @@ library only and its tests use synthetic, offline observations, so the same comp
 reproducible on Windows and POSIX. Provider adapters must implement `MaterialsProvider` and
 return these normalized, provenance-bearing records; credentials and response payloads stay
 outside durable evidence unless explicitly sanitized.
+
+## Real Literature Experiments
+
+The survey package has two distinct modes. Unit tests and the bundled benchmark use only local
+fixtures. A real literature experiment requires `SCIVERSE_API_TOKEN` in an untracked `.env` or
+environment variable, an authenticated Claude Code session (or a configured OpenCode server), and
+may incur model and literature-provider charges. Real-run artifacts must be treated as experimental
+evidence: their corpus, model route, usage and model-response audit are retained together and must
+not be replaced by a plumbing benchmark.
+
+The initial thermoelectric run is deliberately small (four metadata candidates) because observed
+structured-model latency is about two minutes per call. It first performs relevance-ranked metadata
+search, then hard-scoped semantic search. Each metadata candidate receives additional structure
+variable probes for doping/co-doping, defects/vacancies, grain size/nanostructure, carrier
+concentration, and ZT/Seebeck/thermal-conductivity/power-factor relations. The coverage manifest
+records probe count, empty probes, documents with evidence and passages per document; expand the
+corpus only after those indicators show evidence is spread beyond a single document.
+
+Every real run writes the following ignored artifacts under its experiment directory:
+
+- `corpus_snapshot.json`: canonical topic, documents, queries and full passages, with a top-level
+  SHA-256 digest. `SurveyCorpus.read_snapshot` rejects a tampered snapshot.
+- `corpus_manifest.json`: retrieval coverage and the hard scope protocol.
+- `sciverse_audit.jsonl`: query/result evidence chain without credentials.
+- `model_operations.sqlite`: durable model-operation ledger. A `PENDING` operation is never
+  automatically retried, since the provider may have charged it.
+- `model_usage.jsonl`: per-call authoritative tokens, duration and reported cost, without prompts.
+- `model_request_response.jsonl`: opt-in reproducibility audit containing prompts, corpus passages,
+  schemas, structured responses and, for an indeterminate response, the raw CLI envelope. It can
+  contain copyrighted corpus text and must remain local unless its retention and sharing status are
+  reviewed.
+- `report/`: verified LaTeX, BibTeX and JSON survey deliverables.
+
+Use the same runner on both supported shells after creating `.env` locally; the token is not an
+argument and must never be copied into a command history, report or commit.
+
+Linux/macOS:
+
+```bash
+. .venv/bin/activate
+python experiments/run_thermoelectric_real.py
+```
+
+Windows PowerShell:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python .\_vm_scratch\run_thermoelectric_real.py
+```
+
+The current runner remains in `_vm_scratch` while the experiment protocol is being iterated. Once a
+round closes cleanly, it will be promoted with its configuration schema and frozen reproducibility
+inputs into the committed experiment entry point.

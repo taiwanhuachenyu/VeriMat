@@ -117,3 +117,78 @@ def test_report_write_requires_a_verified_audit(tmp_path):
     report = SurveyReport(files={"survey.tex": "x"}, audit={"verified": False})
     with pytest.raises(ValueError, match="verification"):
         report.write(tmp_path)
+
+
+def test_corpus_snapshot_round_trip_and_tamper_detection(tmp_path):
+    import json
+    from src.survey.records import SurveyCorpus, SurveyPassage
+
+    corpus, _ = corpus_and_relation()
+    path = tmp_path / "corpus.json"
+    digest = corpus.write_snapshot(path)
+    restored = SurveyCorpus.read_snapshot(path)
+    assert restored.snapshot() == corpus.snapshot()
+    assert digest == corpus.snapshot()["payload_sha256"]
+    value = json.loads(path.read_text(encoding="utf-8"))
+    value["passages"][0]["text"] = "tampered"
+    path.write_text(json.dumps(value), encoding="utf-8")
+    with pytest.raises(ValueError, match="digest mismatch"):
+        SurveyCorpus.read_snapshot(path)
+
+
+def test_high_recall_extractor_admits_unclear_relation():
+    from src.evaluation.model_backend import ModelResponse
+    from src.survey.extraction import RelationExtractor
+
+    corpus, _ = corpus_and_relation()
+    passage = next(iter(corpus.passages.values()))
+    payload = {
+        "relations": [{
+            "passage_id": passage.passage_id, "material": "sample",
+            "structural_feature": "doping", "property_name": "ZT",
+            "direction": "unclear", "quote": passage.text, "composition": "",
+            "value": "", "unit": "", "temperature_k": "", "method": "experiment",
+        }]
+    }
+
+    class Transport:
+        def complete(self, **kwargs):
+            return ModelResponse(
+                text=__import__("json").dumps(payload), input_tokens=1,
+                output_tokens=1, request_id="request-1",
+            )
+
+    result = RelationExtractor(transport=Transport(), batch_size=1).extract(corpus)
+    assert len(result.relations) == 1
+
+
+def test_gap_prompt_profile_changes_durable_operation_identity():
+    from src.evaluation.model_backend import ModelResponse
+    from src.survey.gaps import GapNarrator, find_candidates
+
+    class Transport:
+        def __init__(self):
+            self.calls = []
+
+        def complete(self, **kwargs):
+            self.calls.append(kwargs)
+            return ModelResponse(
+                text=(
+                    '{"verdict":"not_a_gap","statement":"This candidate is not a '
+                    'research gap.","novelty":"known","novelty_quote":"",'
+                    '"novelty_basis":"The evidence is already established."}'
+                ),
+                input_tokens=1, output_tokens=1, request_id="request-1",
+            )
+
+    corpus, extraction = corpus_and_relation()
+    candidates = find_candidates(extraction, corpus)
+    candidate = candidates.candidates[0]
+    first, second = Transport(), Transport()
+    GapNarrator(transport=first, prompt_profile="schema_v1").narrate(
+        [candidate], result=extraction, corpus=corpus,
+    )
+    GapNarrator(transport=second, prompt_profile="schema_v2").narrate(
+        [candidate], result=extraction, corpus=corpus,
+    )
+    assert first.calls[0]["operation_id"] != second.calls[0]["operation_id"]

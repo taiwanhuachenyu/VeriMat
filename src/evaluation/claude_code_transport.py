@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import shutil
 import sqlite3
 import subprocess
@@ -56,6 +57,7 @@ class ClaudeCodeStructuredTransport(StructuredModelTransport):
         self, *, operation_db: str | Path, cli_path: str | None = None,
         model: str | None = None, usage_log: str | Path | None = None,
         timeout_seconds: float = 600, max_response_bytes: int = 4_000_000,
+        request_response_log: str | Path | None = None,
         circuit_failure_threshold: int = 3, circuit_recovery_seconds: float = 60.0,
     ):
         resolved = cli_path or shutil.which("claude")
@@ -72,6 +74,9 @@ class ClaudeCodeStructuredTransport(StructuredModelTransport):
         self.timeout_seconds = timeout_seconds
         self.max_response_bytes = max_response_bytes
         self.usage_log = extended_path(usage_log) if usage_log else None
+        self.request_response_log = (
+            extended_path(request_response_log) if request_response_log else None
+        )
         self.observed_backends: set[str] = set()
         db_path = extended_path(operation_db)
         db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -288,6 +293,50 @@ class ClaudeCodeStructuredTransport(StructuredModelTransport):
         }
         return response, accounting
 
+    def _append_request_response(self, record: dict[str, Any]) -> None:
+        """Durably append a complete or indeterminate call audit record."""
+        if self.request_response_log is None:
+            return
+        self.request_response_log.parent.mkdir(parents=True, exist_ok=True)
+        with open(self.request_response_log, "a", encoding="utf-8", newline="\n") as handle:
+            with exclusive_lock(handle):
+                handle.write(canonical_json(record) + "\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+
+    def _record_request_response(
+        self, *, operation_id: str, request_hash: str, system: str, user: str,
+        response_schema: dict, response: ModelResponse, accounting: dict[str, Any] | None,
+        cache_hit: bool,
+    ) -> None:
+        self._append_request_response({
+            "schema_version": 1,
+            "recorded_at": datetime.now(timezone.utc).isoformat(),
+            "route_id": CLAUDE_CODE_ROUTE_ID, "operation_id": operation_id,
+            "request_sha256": request_hash, "system": system, "user": user,
+            "response_schema": response_schema, "response_text": response.text,
+            "response_sha256": hashlib.sha256(response.text.encode("utf-8")).hexdigest(),
+            "request_id": response.request_id, "input_tokens": response.input_tokens,
+            "output_tokens": response.output_tokens, "accounting": accounting,
+            "cache_hit": cache_hit, "status": "COMPLETED",
+        })
+
+    def _record_indeterminate_request(
+        self, *, operation_id: str, request_hash: str, system: str, user: str,
+        response_schema: dict, payload: dict[str, Any] | None, error: Exception,
+    ) -> None:
+        """Preserve the returned envelope without changing a PENDING ledger row."""
+        self._append_request_response({
+            "schema_version": 1,
+            "recorded_at": datetime.now(timezone.utc).isoformat(),
+            "route_id": CLAUDE_CODE_ROUTE_ID, "operation_id": operation_id,
+            "request_sha256": request_hash, "system": system, "user": user,
+            "response_schema": response_schema, "response_text": None,
+            "response_sha256": None, "request_id": None, "input_tokens": None,
+            "output_tokens": None, "accounting": None, "cache_hit": False,
+            "status": "INDETERMINATE", "reason": str(error), "result_envelope": payload,
+        })
+
     def _record_usage(self, *, operation_id: str, request_hash: str, accounting: dict) -> None:
         """Append the billing facts the dependency disclosure has to quote."""
         if self.usage_log is None:
@@ -317,20 +366,31 @@ class ClaudeCodeStructuredTransport(StructuredModelTransport):
         )
         cached = self._lookup(operation_id, request_hash)
         if cached is not None:
+            self._record_request_response(
+                operation_id=operation_id, request_hash=request_hash, system=system, user=user,
+                response_schema=response_schema, response=cached, accounting=None, cache_hit=True,
+            )
             return cached
 
         self.circuit.before_call(operation_id=operation_id)
+        reserved = False
+        payload: dict[str, Any] | None = None
         try:
             raced = self._reserve(operation_id, request_hash)
             if raced is not None:
                 self.circuit.record_success(operation_id=operation_id)
                 return raced
-            response, accounting = self._decode(
-                self._invoke(system=system, user=user, response_schema=response_schema)
-            )
+            reserved = True
+            payload = self._invoke(system=system, user=user, response_schema=response_schema)
+            response, accounting = self._decode(payload)
         except CircuitOpenError:
             raise
-        except Exception:
+        except Exception as exc:
+            if reserved:
+                self._record_indeterminate_request(
+                    operation_id=operation_id, request_hash=request_hash, system=system, user=user,
+                    response_schema=response_schema, payload=payload, error=exc,
+                )
             self.circuit.record_failure(
                 operation_id=operation_id, reason_code="model_operation_failed",
             )
@@ -348,5 +408,9 @@ class ClaudeCodeStructuredTransport(StructuredModelTransport):
             raise IndeterminateModelOperation("model response cache commit failed")
         self._record_usage(
             operation_id=operation_id, request_hash=request_hash, accounting=accounting,
+        )
+        self._record_request_response(
+            operation_id=operation_id, request_hash=request_hash, system=system, user=user,
+            response_schema=response_schema, response=committed, accounting=accounting, cache_hit=False,
         )
         return committed

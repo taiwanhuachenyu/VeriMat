@@ -1,0 +1,65 @@
+{
+  "baseline": "thermoelectric_pilot_20260826",
+  "interpretation": {
+    "coverage_limit": "Six of eight document probes were empty; three candidate documents remain unread. The recovery evaluated only five candidates reached before the interrupted run, and 26 deterministic candidates were intentionally not started.",
+    "gap_outcome": "Two admitted unvalidated-mechanism gaps are bounded hypotheses from a single simulation source. They require independent literature retrieval and database or experimental validation before any scientific-discovery claim.",
+    "next_gate": "Do not scale gap narration until a new retrieval strategy obtains evidence from multiple documents, including the 2025 co-doping paper.",
+    "retrieval_outcome": "Targeted document probes increased passages and recovered extractable relations, but evidence remains concentrated in one of four candidate documents."
+  },
+  "metrics": {
+    "admission_rate": {
+      "pilot": 0.0,
+      "targeted": 1.0
+    },
+    "document_probes": {
+      "pilot": 0,
+      "targeted": 8
+    },
+    "documents": {
+      "pilot": 4,
+      "targeted": 4
+    },
+    "documents_with_evidence": {
+      "pilot": 1,
+      "targeted": 1
+    },
+    "empty_document_probes": {
+      "pilot": 0,
+      "targeted": 6
+    },
+    "gap_candidates_started": {
+      "pilot": 0,
+      "targeted": 5
+    },
+    "gap_model_calls": {
+      "pilot": 0,
+      "targeted": 5
+    },
+    "gaps_admitted": {
+      "pilot": 0,
+      "targeted": 2
+    },
+    "passages": {
+      "pilot": 3,
+      "targeted": 6
+    },
+    "queries": {
+      "pilot": 2,
+      "targeted": 10
+    },
+    "relations_admitted": {
+      "pilot": 0,
+      "targeted": 15
+    },
+    "relations_proposed": {
+      "pilot": 0,
+      "targeted": 15
+    },
+    "report_verified": {
+      "pilot": true,
+      "targeted": true
+    }
+  },
+  "schema_version": 1,
+  "targeted_recovery": "thermoelectric_targeted_gap_recovery_20260826"
+}

@@ -47,6 +47,9 @@ MIN_AXIS_SUPPORT = 2
 #: truncation reads as "this is all of them".
 MAX_CANDIDATES_PER_KIND = 20
 
+# Included in durable operation IDs whenever the narration prompt changes.
+GAP_PROMPT_PROFILE = "schema_v2"
+
 #: Passages exposed per candidate.  Enough for the model to judge novelty, bounded so one candidate
 #: with fifty supporting relations cannot push the call past the context limit.
 MAX_PASSAGES_PER_CANDIDATE = 8
@@ -83,7 +86,7 @@ SYSTEM_PROMPT = (
     "not_a_gap when the pattern has an ordinary explanation, such as a combination that is "
     "physically pointless or a convention that makes a condition unnecessary. To call a gap known "
     "you must quote the passage that recognises it, verbatim; a quote that is not literally there "
-    "is discarded and the gap is dropped. Return raw JSON with no code fence."
+    "is discarded and the gap is dropped. Return exactly one JSON object that satisfies the supplied schema; include every required field even when its value is an empty string. Return raw JSON with no code fence."
 )
 
 
@@ -441,11 +444,15 @@ class GapNarrator:
     def __init__(
         self, *, transport: StructuredModelTransport,
         max_passages: int = MAX_PASSAGES_PER_CANDIDATE, max_passage_chars: int = 2000,
+        prompt_profile: str = GAP_PROMPT_PROFILE,
     ):
         if max_passages < 1:
             raise SurveyContractError("a candidate must expose at least one passage")
+        if not prompt_profile.strip():
+            raise SurveyContractError("gap prompt profile is required")
         self.transport = transport
         self.max_passages = max_passages
+        self.prompt_profile = prompt_profile
         self.max_passage_chars = max_passage_chars
 
     def _exposed(
@@ -578,7 +585,9 @@ class GapNarrator:
                 })
                 continue
             response = self.transport.complete(
-                operation_id=digest_id("op", "gap", fingerprint, candidate.candidate_id()),
+                operation_id=digest_id(
+                    "op", "gap", self.prompt_profile, fingerprint, candidate.candidate_id(),
+                ),
                 system=SYSTEM_PROMPT,
                 user=self._payload(candidate, exposed, result),
                 response_schema=GAP_SCHEMA,
