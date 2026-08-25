@@ -105,6 +105,8 @@ class SearchReport:
     pareto_archive: tuple[SearchResult, ...]
     evaluated: int
     rejected_by_gate: int
+    rejected_by_plausibility: int
+    pruned: int
     trace: tuple[dict[str, object], ...]
 
 
@@ -197,6 +199,8 @@ class ParetoMCTS:
         expander: Callable[[EvidenceBoundHypothesis], Sequence[Expansion]],
         evaluator: Callable[[EvidenceBoundHypothesis], ObjectiveVector],
         gate: Callable[[EvidenceBoundHypothesis, ObjectiveVector], tuple[bool, str]] = default_acceptance_gate,
+        plausibility: Callable[[EvidenceBoundHypothesis, ObjectiveVector], tuple[bool, str]] | None = None,
+        prune: Callable[[Expansion], tuple[bool, str]] | None = None,
         exploration: float = 1.25,
         max_depth: int = 4,
     ) -> None:
@@ -207,6 +211,8 @@ class ParetoMCTS:
         self.expander = expander
         self.evaluator = evaluator
         self.gate = gate
+        self.plausibility = plausibility or (lambda _hypothesis, _objectives: (True, "accepted"))
+        self.prune = prune or (lambda _proposal: (True, "accepted"))
         self.exploration = exploration
         self.max_depth = max_depth
 
@@ -218,6 +224,7 @@ class ParetoMCTS:
         trace: list[dict[str, object]] = []
         rejected = 0
         evaluated = 0
+        rejected_plausibility = 0
 
         for iteration in range(iterations):
             weights = self._normalized_weights(self._WEIGHT_BANK[iteration % len(self._WEIGHT_BANK)])
@@ -240,7 +247,13 @@ class ParetoMCTS:
 
             objectives = self.evaluator(node.hypothesis)
             evaluated += 1
-            accepted, reason = self.gate(node.hypothesis, objectives)
+            plausible, plausibility_reason = self.plausibility(node.hypothesis, objectives)
+            if plausible:
+                accepted, reason = self.gate(node.hypothesis, objectives)
+            else:
+                accepted = False
+                reason = f"plausibility:{plausibility_reason}"
+                rejected_plausibility += 1
             reward = objectives.values if accepted else (0.0,) * len(OBJECTIVE_NAMES)
             if accepted:
                 archive_candidates.append(
@@ -271,6 +284,8 @@ class ParetoMCTS:
             pareto_archive=pareto_front(archive_candidates),
             evaluated=evaluated,
             rejected_by_gate=rejected,
+            rejected_by_plausibility=rejected_plausibility,
+            pruned=sum(1 for item in trace if item.get("event") == "prune"),
             trace=tuple(trace),
         )
 
@@ -285,6 +300,19 @@ class ParetoMCTS:
             if digest in seen:
                 continue
             seen.add(digest)
+            admitted, reason = self.prune(proposal)
+            if not admitted:
+                trace.append(
+                    {
+                        "event": "prune",
+                        "iteration": iteration,
+                        "parent_hypothesis_id": node.hypothesis.hypothesis_id,
+                        "hypothesis_id": proposal.hypothesis.hypothesis_id,
+                        "hypothesis_sha256": digest,
+                        "reason": reason,
+                    }
+                )
+                continue
             node.children.append(
                 _Node(
                     hypothesis=proposal.hypothesis,

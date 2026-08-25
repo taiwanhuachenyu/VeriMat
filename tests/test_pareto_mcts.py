@@ -180,3 +180,31 @@ def test_invalid_evidence_locator_is_rejected():
     accepted, reason = default_acceptance_gate(item, vector(1, 1, 1, 1, 1, 1, 1))
     assert not accepted
     assert reason == "invalid_evidence_locator"
+
+
+def test_llm_plausibility_and_pruning_are_audited_without_overriding_gate():
+    options = [
+        Expansion("keep", hypothesis("keep"), 1.0),
+        Expansion("prune", hypothesis("prune"), 0.9),
+    ]
+
+    def expand(item):
+        return options if item.hypothesis_id == "root" else []
+
+    def score(item):
+        return vector(*(0.8 for _ in range(7)))
+
+    search = ParetoMCTS(
+        expander=expand,
+        evaluator=score,
+        plausibility=lambda item, _score: (item.hypothesis_id != "keep", "model_doubted"),
+        prune=lambda proposal: (proposal.action != "prune", "outside_focus"),
+        max_depth=2,
+    )
+    report = search.search(hypothesis("root"), iterations=5)
+    events = [item["event"] for item in report.trace]
+    assert "prune" in events
+    assert report.pruned == 1
+    assert report.rejected_by_plausibility > 0
+    assert any(item.get("gate_reason") == "plausibility:model_doubted" for item in report.trace)
+    assert not any(item.hypothesis.hypothesis_id == "keep" for item in report.pareto_archive)

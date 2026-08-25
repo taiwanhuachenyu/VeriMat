@@ -12,7 +12,7 @@ claims survive.
 - `src/core`: the platform boundary, holding advisory file locks, durable renames, and
   long-path handling, so one set of durability guarantees covers both Windows and POSIX;
 - `src/evidence`: hash-chained event ledger and Claim–Evidence Decision Graph projection;
-- `src/discovery`: counterevidence-aware Pareto-MCTS and external evidence gates;
+- `src/discovery`: counterevidence-aware Pareto-MCTS, external evidence gates, and audited LLM guidance hooks;
 - `src/tools`: the Sciverse literature client, whose call log is itself an evidence chain;
 - `src/orchestration`: durable jobs, leases, checkpoints, budgets, and content-addressed artifacts;
 - `src/learning`: delayed external credit and auditable policy updates;
@@ -106,6 +106,17 @@ Both transports honour the same durability contract: a call is reserved in an op
 table before it is issued and marked complete only once the response has been recorded, and
 an operation left `PENDING` is never retried automatically, because it may already have been
 charged. `VERIMAT_MODEL_USAGE_LOG` records what each route actually spent.
+
+## LLM-guided discovery search
+
+`ParetoMCTS` keeps model participation distinct from deterministic admission. A structured
+model may supply seed hypotheses and expansion priors, evaluate the scientific plausibility
+of an intermediate hypothesis, and prune an expansion that falls outside the evidence-backed
+focus. The objective evaluator, the hard evidence gate, and exact Pareto archive remain the
+final authority. Every model-directed rejection is recorded as a `plausibility:` gate reason;
+every removed expansion is emitted as a `prune` trace event with its hypothesis digest and
+reason. `SearchReport` exposes separate plausibility-rejection and pruning counts so the
+search can be replayed and audited.
 
 ## Reproducibility
 
