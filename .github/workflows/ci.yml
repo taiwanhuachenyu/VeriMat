@@ -1,0 +1,147 @@
+name: ci
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: ${{ matrix.os }} / py${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ["3.11", "3.12", "3.13"]
+    env:
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install test dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements-dev.lock
+
+      - name: Report the platform guarantees in force
+        run: python -c "import json;from src.core.portability import platform_report;print(json.dumps(platform_report(),indent=2))"
+
+      # A green deep-path suite is only evidence on a host that refuses the unconverted path.
+      # Windows accepts one when the LongPathsEnabled registry opt-out is on, so the regime is
+      # observed here and recorded in the run summary rather than assumed from the platform name.
+      - name: Prove the path-length limit is real before the suite clears it
+        shell: python
+        run: |
+          import os, shutil, sys, tempfile
+          from src.core.portability import extended_path
+
+          base = tempfile.mkdtemp()
+          try:
+              deep = os.path.join(base, *(("nested" + "d" * 60,) * 4))
+              extended_path(deep).mkdir(parents=True)
+              probe = os.path.join(deep, "probe.txt")
+              assert len(probe) > 260, len(probe)
+              try:
+                  with open(probe, "w", encoding="utf-8") as handle:
+                      handle.write("plain")
+                  refusal = ""
+              except OSError as error:
+                  refusal = type(error).__name__
+          finally:
+              # TemporaryDirectory cannot clean this up: its rmtree walks the plain path, stops
+              # seeing the deepest directory at the limit, and then calls its parent non-empty.
+              shutil.rmtree(extended_path(base))
+
+          if sys.platform != "win32":
+              assert not refusal, f"POSIX refused a {len(probe)}-character path: {refusal}"
+              finding = f"has no MAX_PATH limit to bypass ({len(probe)} characters accepted)"
+          elif refusal:
+              finding = f"refuses an unprefixed {len(probe)}-character path with {refusal}"
+          else:
+              finding = (
+                  f"accepts an unprefixed {len(probe)}-character path, so the long-path tests"
+                  " carry no evidence on this runner"
+              )
+              print("::warning::LongPathsEnabled is on for this runner")
+          print(f"{os.environ['RUNNER_OS']} {finding}")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
+              handle.write(f"- `{os.environ['RUNNER_OS']}` {finding}\n")
+
+      - name: Run the test suite
+        run: python -m pytest -q
+
+      - name: Run the offline example
+        run: python examples/pareto_mcts_demo.py
+
+  determinism:
+    name: cross-platform determinism
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    env:
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install test dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements-dev.lock
+
+      - name: Hash the offline example output
+        shell: python
+        run: |
+          import hashlib, os, subprocess, sys
+          out = subprocess.run(
+              [sys.executable, "examples/pareto_mcts_demo.py"],
+              capture_output=True, check=True,
+          ).stdout
+          digest = hashlib.sha256(out).hexdigest()
+          print(f"example-stdout-sha256={digest}")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
+              handle.write(f"- `{os.environ['RUNNER_OS']}` example stdout SHA-256: `{digest}`\n")
+          with open("digest.txt", "w", encoding="utf-8") as handle:
+              handle.write(digest)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: example-digest-${{ matrix.os }}
+          path: digest.txt
+
+  compare-determinism:
+    name: identical output across platforms
+    runs-on: ubuntu-latest
+    needs: determinism
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: example-digest-*
+          path: digests
+
+      - name: Fail if the platforms disagree
+        shell: bash
+        run: |
+          set -euo pipefail
+          found=$(find digests -name digest.txt | sort)
+          echo "$found" | while read -r f; do echo "$f: $(cat "$f")"; done
+          count=$(cat $found | sort -u | wc -l)
+          if [ "$count" -ne 1 ]; then
+            echo "::error::the offline example is not byte-identical across platforms"
+            exit 1
+          fi
+          echo "identical on every platform"
