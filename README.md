@@ -168,3 +168,21 @@ The report date is an explicit input rather than `\today`, and the generated bui
 `SOURCE_DATE_EPOCH` so repeated builds are comparable. The default author is
 `taiwanhuachenyu`. API credentials remain environment-only; never place `SCIVERSE_API_TOKEN`
 in a report, fixture, commit, or evidence log.
+
+## Materials database cross-validation
+
+`src/materials/cross_validation.py` provides the provider-neutral validation contract for
+Sciverse literature observations and records returned by Materials Project, OQMD, or NOMAD
+adapters. Each `MaterialObservation` retains provider ID, source locator, content digest,
+composition, property, numeric value, unit, temperature, method, and uncertainty. Formula and
+property aliases are normalized deterministically; only explicitly supported unit dimensions are
+converted. Pairing requires matching composition, property, method (configurable), and
+measurement temperature within a declared tolerance. Unmatched records are retained with a
+reason rather than silently dropped.
+
+The resulting report separates numerical database agreement from the discovery gate and includes
+MAE, RMSE, signed bias, R-squared when defined, and tolerance pass rate. The module is standard
+library only and its tests use synthetic, offline observations, so the same comparison is
+reproducible on Windows and POSIX. Provider adapters must implement `MaterialsProvider` and
+return these normalized, provenance-bearing records; credentials and response payloads stay
+outside durable evidence unless explicitly sanitized.
