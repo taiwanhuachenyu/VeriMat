@@ -229,12 +229,10 @@ class ParetoMCTS:
                 if node.visits == 0:
                     break
 
+            # Progressive widening: a leaf is evaluated on the visit that discovers it and is
+            # expanded only on a later visit, so action priors are never spent on a node whose
+            # own objectives are still unknown.
             if node.visits > 0 and not node.expanded and node.depth < self.max_depth:
-                self._expand(node, trace, iteration)
-                if node.children:
-                    node = self._select_child(node, weights)
-                    path.append(node)
-            elif not node.expanded and node.depth < self.max_depth:
                 self._expand(node, trace, iteration)
                 if node.children:
                     node = self._select_child(node, weights)
