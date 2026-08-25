@@ -62,6 +62,31 @@ def test_verified_backup_restores_database_ledgers_and_artifacts(tmp_path):
     assert json.loads((restored / "restore_receipt.json").read_text())["verified"]
 
 
+def test_the_whole_cycle_works_where_windows_would_refuse_the_path(tmp_path):
+    """Guards the fix independently of how long the runner's temporary directory happens to be."""
+    deep = tmp_path.joinpath(*("nested" + "d" * 60,) * 4)
+    assert len(str(deep)) > 260
+    # The tree is deliberately not created here: every store has to build its own root
+    # from a path this long, which is the step that failed before the conversion.
+    job_database, ledgers, artifacts, job, ref = _runtime(deep)
+    backup = deep / "backup"
+    manifest = create_backup(
+        job_database=job_database, ledger_root=ledgers,
+        artifact_root=artifacts, output=backup,
+    )
+    recorded = [entry["path"] for entry in manifest["files"]]
+    assert recorded and not any("?" in path or "\\" in path for path in recorded), (
+        "the long-path prefix must never reach a recorded manifest path"
+    )
+    assert verify_backup(backup)["verified"]
+    restored = deep / "restored"
+    restore_backup(backup=backup, target_root=restored)
+    with ArtifactStore(restored / "artifacts") as store:
+        assert store.read_json(ref) == {"decision": "UNRESOLVED"}
+    with JobStore(restored / "control" / "jobs.db") as jobs:
+        assert jobs.get(job.job_id, tenant_id="tenant-a").used_tokens == 7
+
+
 def test_backup_tampering_and_overwrite_are_rejected(tmp_path):
     job_database, ledgers, artifacts, *_ = _runtime(tmp_path)
     backup = tmp_path / "backup"

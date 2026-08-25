@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from src.core.events import canonical_json
+from src.core.portability import extended_path
 from src.evidence.ledger import EventLedger
 
 COUNTER_RELATIONS = {"CONTRADICTS", "BOUNDS", "PRECEDENT_FOR"}
@@ -35,7 +36,7 @@ def _sha256(path: Path) -> str:
 
 def _read_jsonl(path: str | Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    for line_number, line in enumerate(Path(path).read_text(encoding="utf-8").splitlines(), 1):
+    for line_number, line in enumerate(extended_path(path).read_text(encoding="utf-8").splitlines(), 1):
         if not line.strip():
             continue
         try:
@@ -256,12 +257,12 @@ def _validate_snapshots(
 def seal_benchmark(
     path: str | Path, evidence_snapshot_path: str | Path,
 ) -> dict[str, Any]:
-    target = Path(path)
+    target = extended_path(path)
     rows = _read_jsonl(target)
     if not rows:
         raise BenchmarkError("challenge set is empty")
     validate_challenges(rows)
-    snapshot_path = Path(evidence_snapshot_path)
+    snapshot_path = extended_path(evidence_snapshot_path)
     snapshots = _read_jsonl(snapshot_path)
     snapshot_counts = _validate_snapshots(snapshots, rows)
     counts = Counter((row["benchmark_track"], row["split"]) for row in rows)
@@ -416,7 +417,7 @@ def evaluate_predictions(
         context = f"prediction[{index}]"
         _validate_prediction(prediction, context)
         _verify_prediction_ledger(
-            prediction, ledger_root=Path(ledger_root), context=context,
+            prediction, ledger_root=extended_path(ledger_root), context=context,
         )
         challenge_id = str(prediction["challenge_id"])
         if challenge_id in indexed:
@@ -488,8 +489,8 @@ def evaluate_predictions(
     summary = {
         "schema_version": 1,
         "method_id": next(iter(methods)), "run_id": next(iter(runs)),
-        "challenge_sha256": _sha256(Path(challenge_path)),
-        "prediction_sha256": _sha256(Path(prediction_path)),
+        "challenge_sha256": _sha256(extended_path(challenge_path)),
+        "prediction_sha256": _sha256(extended_path(prediction_path)),
         "n": len(items),
         "completed_rate": sum(item["completed"] for item in items) / len(items),
         "budget_compliance_rate": 1 - sum(item["over_budget"] for item in items) / len(items),

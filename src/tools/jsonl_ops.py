@@ -17,12 +17,13 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from pathlib import Path
+
+from src.core.portability import extended_path
 
 
 def read_jsonl(path: str) -> list[dict]:
     rows = []
-    for line in Path(path).read_text(encoding="utf-8", errors="ignore").splitlines():
+    for line in extended_path(path).read_text(encoding="utf-8", errors="ignore").splitlines():
         line = line.strip()
         if line:
             try:
@@ -35,7 +36,7 @@ def read_jsonl(path: str) -> list[dict]:
 def write_jsonl(rows: list[dict], path: str | None) -> None:
     out = "\n".join(json.dumps(r, ensure_ascii=False) for r in rows)
     if path:
-        Path(path).write_text(out + "\n", encoding="utf-8")
+        extended_path(path).write_text(out + "\n", encoding="utf-8")
     else:
         print(out)
 
@@ -131,7 +132,7 @@ def cmd_filter(a) -> int:
 
 def cmd_validate(a) -> int:
     rows = read_jsonl(a.files[0])
-    schema = json.loads(Path(a.schema).read_text(encoding="utf-8"))
+    schema = json.loads(extended_path(a.schema).read_text(encoding="utf-8"))
     item_schema = schema.get("items", schema)  # 允许传数组 schema 或单条 schema
     bad = 0
     for i, r in enumerate(rows):

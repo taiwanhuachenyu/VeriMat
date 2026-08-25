@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from src.core.events import canonical_json
+from src.core.portability import extended_path
 from src.evidence.ledger import EventLedger
 from src.learning.audit import PolicyAuditBridge
 from src.learning.policy_store import PolicyStore, StrategyScore
@@ -102,7 +103,7 @@ class OrderedBenchmarkRunner:
             raise ValueError("exploration_period must be positive")
         self.store = store
         self.artifacts = artifacts
-        self.ledger_root = Path(ledger_root)
+        self.ledger_root = extended_path(ledger_root)
         self.policy_store = policy_store
         self.policy_ledger = policy_ledger
         self.backend = backend

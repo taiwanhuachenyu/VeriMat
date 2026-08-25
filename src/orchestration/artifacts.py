@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from src.core.events import canonical_json, validate_durable_payload
+from src.core.portability import extended_path, fsync_directory
 from src.operations.runtime_migrations import (
     ARTIFACT_SPEC, assert_runtime_compatibility, prepare_runtime_database, schema_script,
 )
@@ -53,7 +54,10 @@ class ArtifactRef:
 
 class ArtifactStore:
     def __init__(self, root: str | Path):
-        self.root = Path(root)
+        # Converted once here rather than at each syscall: a blob path adds a 64-character tenant
+        # digest, a shard and a 64-character content digest to the root, and pathlib carries the
+        # conversion through every ``/``, ``resolve`` and ``rglob`` derived from it.
+        self.root = extended_path(root)
         self.root.mkdir(parents=True, exist_ok=True)
         database = self.root / "artifacts.db"
         prepare_runtime_database(database, ARTIFACT_SPEC)
@@ -134,11 +138,7 @@ class ArtifactStore:
                     os.link(temporary_name, destination)
                 except FileExistsError:
                     pass
-                directory_fd = os.open(destination.parent, os.O_RDONLY)
-                try:
-                    os.fsync(directory_fd)
-                finally:
-                    os.close(directory_fd)
+                fsync_directory(destination.parent)
             finally:
                 try:
                     os.unlink(temporary_name)

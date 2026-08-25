@@ -8,6 +8,8 @@ from collections import Counter
 from datetime import date
 from pathlib import Path
 
+from src.core.portability import extended_path
+
 from .baseline_runner import (
     BaselineBackend, BlindTask, DecisionOutput, EvidenceSelection, MethodSpec,
     QueryPlan, RetrievalResult, RetrievedPassage, StrategyCandidate, Usage,
@@ -35,7 +37,7 @@ class SnapshotCorpusRetriever:
         if top_k < 1:
             raise ValueError("top_k must be positive")
         self.top_k = top_k
-        self.rows = [json.loads(line) for line in Path(snapshot_path).read_text(
+        self.rows = [json.loads(line) for line in extended_path(snapshot_path).read_text(
             encoding="utf-8"
         ).splitlines() if line.strip()]
         self.document_frequency = Counter()

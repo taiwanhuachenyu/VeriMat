@@ -14,6 +14,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
+from src.core.portability import extended_path
 from src.orchestration.job_store import (
     IdempotencyConflict, IllegalTransition, Job, JobStatus, JobStore, JobStoreError,
 )
@@ -143,7 +144,7 @@ class ControlPlaneApp:
         rate_limiter: PrincipalRateLimiter | None = None,
         trace_recorder: TraceRecorder | None = None,
     ):
-        self.store_path = str(store_path)
+        self.store_path = str(extended_path(store_path))
         self.auth = auth
         self.metrics = metrics or ControlPlaneMetrics()
         self.rate_limiter = rate_limiter or PrincipalRateLimiter()

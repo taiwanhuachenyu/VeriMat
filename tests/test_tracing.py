@@ -3,6 +3,7 @@ import os
 
 import pytest
 
+from src.core.portability import FILE_MODE_ENFORCED
 from src.service.tracing import HttpTraceRecord, StructuredTraceLog, TraceContext
 
 
@@ -28,7 +29,8 @@ def test_structured_trace_log_is_0600_append_only_and_exact_schema(tmp_path):
     rows = [json.loads(line) for line in path.read_text().splitlines()]
     assert len(rows) == 2 and rows[0] == rows[1]
     assert rows[0]["request_id_sha256"] != "request"
-    assert os.stat(path).st_mode & 0o777 == 0o600
+    if FILE_MODE_ENFORCED:
+        assert os.stat(path).st_mode & 0o777 == 0o600
 
 
 def test_trace_log_rejects_symlink(tmp_path):

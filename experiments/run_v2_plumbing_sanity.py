@@ -16,6 +16,7 @@ from typing import Any
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from src.core.portability import extended_path, fsync_directory
 from src.evaluation.baseline_runner import BaselineTaskRunner, MethodSpec
 from src.evaluation.blinding import verify_blind_bundle
 from src.evaluation.challenge import evaluate_predictions, seal_benchmark
@@ -62,11 +63,7 @@ def _atomic_write(path: Path, content: str) -> None:
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temporary, path)
-        directory = os.open(path.parent, os.O_RDONLY)
-        try:
-            os.fsync(directory)
-        finally:
-            os.close(directory)
+        fsync_directory(path.parent)
     finally:
         try:
             os.unlink(temporary)
@@ -177,12 +174,12 @@ def evaluate_after_execution(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=DISCLAIMER)
-    parser.add_argument("--tasks", required=True, type=Path)
-    parser.add_argument("--task-manifest", required=True, type=Path)
-    parser.add_argument("--evidence-snapshots", required=True, type=Path)
-    parser.add_argument("--challenges", required=True, type=Path)
-    parser.add_argument("--methods", required=True, type=Path)
-    parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--tasks", required=True, type=extended_path)
+    parser.add_argument("--task-manifest", required=True, type=extended_path)
+    parser.add_argument("--evidence-snapshots", required=True, type=extended_path)
+    parser.add_argument("--challenges", required=True, type=extended_path)
+    parser.add_argument("--methods", required=True, type=extended_path)
+    parser.add_argument("--output", required=True, type=extended_path)
     parser.add_argument("--run-id", default="v2-dev-plumbing-sanity-v1")
     parser.add_argument(
         "--method-ids", nargs="+", default=list(DEFAULT_METHODS),

@@ -4,11 +4,17 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from src.core.portability import extended_path
 
 
 METHODS = {
@@ -48,8 +54,8 @@ def add_labels(ax, digits: int = 3) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--results", type=Path, required=True)
-    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--results", type=extended_path, required=True)
+    parser.add_argument("--output", type=extended_path, required=True)
     args = parser.parse_args()
 
     performance = read_rows(args.results, PERFORMANCE)

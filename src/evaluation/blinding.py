@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from src.core.events import canonical_json
+from src.core.portability import extended_path
 
 from .challenge import BenchmarkError, _read_jsonl, _sha256, validate_challenges
 
@@ -60,12 +61,12 @@ def validate_blind_tasks(rows: list[dict[str, Any]]) -> None:
 def materialize_blind_bundle(
     *, challenge_path: str | Path, output_dir: str | Path,
 ) -> dict[str, Any]:
-    source = Path(challenge_path)
+    source = extended_path(challenge_path)
     challenges = _read_jsonl(source)
     validate_challenges(challenges)
     tasks = [{field: challenge[field] for field in TASK_FIELDS} for challenge in challenges]
     validate_blind_tasks(tasks)
-    output = Path(output_dir)
+    output = extended_path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     task_path = output / "tasks.jsonl"
     task_path.write_text(
@@ -93,8 +94,8 @@ def materialize_blind_bundle(
 def verify_blind_bundle(*, task_path: str | Path, manifest_path: str | Path) -> None:
     tasks = _read_jsonl(task_path)
     validate_blind_tasks(tasks)
-    manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
-    if manifest.get("task_sha256") != _sha256(Path(task_path)):
+    manifest = json.loads(extended_path(manifest_path).read_text(encoding="utf-8"))
+    if manifest.get("task_sha256") != _sha256(extended_path(task_path)):
         raise BenchmarkError("blind task bundle hash does not match manifest")
     if manifest.get("tasks") != len(tasks):
         raise BenchmarkError("blind task bundle count does not match manifest")

@@ -13,3 +13,12 @@ __pycache__/
 .pytest_cache/
 .venv/
 .DS_Store
+.envrc
+.env.*
+!.env.example
+*.token
+secrets/
+_local/
+_vm_scratch/
+AI for Research.pdf
+*.docx

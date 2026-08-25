@@ -12,6 +12,7 @@ from pathlib import Path
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from src.core.portability import extended_path
 from src.evaluation.statistics import StatisticsError, compare_methods
 
 
@@ -28,15 +29,15 @@ def _method(value: str) -> tuple[str, Path]:
     identifier, separator, directory = value.partition("=")
     if not separator or not identifier.strip() or not directory.strip():
         raise argparse.ArgumentTypeError("method must be METHOD_ID=DIRECTORY")
-    return identifier, Path(directory)
+    return identifier, extended_path(directory)
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--benchmark-manifest", required=True, type=Path)
+    parser.add_argument("--benchmark-manifest", required=True, type=extended_path)
     parser.add_argument("--reference", required=True)
     parser.add_argument("--method", action="append", required=True, type=_method)
-    parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--output", required=True, type=extended_path)
     parser.add_argument("--bootstrap-iterations", type=int, default=10000)
     parser.add_argument("--seed", type=int, default=20260812)
     args = parser.parse_args(argv)

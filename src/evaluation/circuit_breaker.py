@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 from typing import Callable
 
+from src.core.portability import extended_path
 from src.operations.runtime_migrations import (
     CIRCUIT_SPEC, DatabaseSpec, assert_runtime_compatibility, prepare_runtime_database,
     schema_script,
@@ -40,7 +41,7 @@ class PersistentCircuitBreaker:
         self.recovery_timeout_seconds = recovery_timeout_seconds
         self.probe_timeout_seconds = probe_timeout_seconds
         self.clock = clock
-        path = Path(database)
+        path = extended_path(database)
         path.parent.mkdir(parents=True, exist_ok=True)
         prepare_runtime_database(path, database_spec)
         self.conn = sqlite3.connect(str(path), timeout=30, isolation_level=None)

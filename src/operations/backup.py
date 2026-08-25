@@ -1,7 +1,6 @@
 """Verified online backup and restore for the single-node trusted runtime."""
 from __future__ import annotations
 
-import fcntl
 import hashlib
 import json
 import os
@@ -14,6 +13,9 @@ from pathlib import Path
 from typing import Any
 
 from src.core.events import canonical_json
+from src.core.portability import (
+    extended_path, fsync_directory, fsync_file, lock_shared, sqlite_readonly_uri,
+)
 from src.evidence.ledger import EventLedger
 
 
@@ -29,14 +31,6 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _fsync_directory(path: Path) -> None:
-    descriptor = os.open(path, os.O_RDONLY)
-    try:
-        os.fsync(descriptor)
-    finally:
-        os.close(descriptor)
-
-
 def _write_bytes(path: Path, content: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
@@ -47,7 +41,7 @@ def _write_bytes(path: Path, content: bytes) -> None:
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temporary, path)
-        _fsync_directory(path.parent)
+        fsync_directory(path.parent)
     finally:
         temporary.unlink(missing_ok=True)
 
@@ -56,7 +50,7 @@ def _sqlite_backup(source: Path, destination: Path) -> None:
     if not source.is_file() or source.is_symlink():
         raise BackupError(f"SQLite source is absent or unsafe: {source}")
     destination.parent.mkdir(parents=True, exist_ok=True)
-    source_connection = sqlite3.connect(f"file:{source}?mode=ro", uri=True, timeout=30)
+    source_connection = sqlite3.connect(sqlite_readonly_uri(source), uri=True, timeout=30)
     destination_connection = sqlite3.connect(str(destination), timeout=30)
     try:
         source_connection.backup(destination_connection)
@@ -70,16 +64,15 @@ def _sqlite_backup(source: Path, destination: Path) -> None:
     finally:
         destination_connection.close()
         source_connection.close()
-    with destination.open("rb") as handle:
-        os.fsync(handle.fileno())
-    _fsync_directory(destination.parent)
+    fsync_file(destination)
+    fsync_directory(destination.parent)
 
 
 def _copy_locked_ledger(source: Path, destination: Path) -> dict[str, Any]:
     if source.is_symlink() or not source.is_file():
         raise BackupError(f"ledger source is unsafe: {source}")
     with source.open("rb") as handle:
-        fcntl.flock(handle.fileno(), fcntl.LOCK_SH)
+        lock_shared(handle)
         content = handle.read()
     _write_bytes(destination, content)
     receipt = EventLedger(destination).verify()
@@ -113,10 +106,10 @@ def create_backup(
     artifact_root: str | Path, output: str | Path,
 ) -> dict[str, Any]:
     """Create an atomic backup directory from online SQLite and immutable file sources."""
-    job_source = Path(job_database).resolve()
-    ledger_source = Path(ledger_root).resolve()
-    artifact_source = Path(artifact_root).resolve()
-    target = Path(output).resolve()
+    job_source = extended_path(job_database).resolve()
+    ledger_source = extended_path(ledger_root).resolve()
+    artifact_source = extended_path(artifact_root).resolve()
+    target = extended_path(output).resolve()
     if target.exists():
         raise BackupError(f"backup output already exists: {target}")
     _reject_symlinks(ledger_source)
@@ -135,9 +128,7 @@ def create_backup(
         _sqlite_backup(artifact_database_source, artifact_snapshot)
         records.append(_file_record(stage, artifact_snapshot, "sqlite_artifacts"))
 
-        artifact_connection = sqlite3.connect(
-            f"file:{artifact_snapshot}?mode=ro", uri=True,
-        )
+        artifact_connection = sqlite3.connect(sqlite_readonly_uri(artifact_snapshot), uri=True)
         artifact_connection.row_factory = sqlite3.Row
         try:
             rows = artifact_connection.execute(
@@ -206,9 +197,9 @@ def create_backup(
             (json.dumps(manifest, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode(),
         )
         verify_backup(stage)
-        _fsync_directory(stage)
+        fsync_directory(stage)
         os.replace(stage, target)
-        _fsync_directory(target.parent)
+        fsync_directory(target.parent)
         return manifest
     except Exception:
         shutil.rmtree(stage, ignore_errors=True)
@@ -232,7 +223,7 @@ def _manifest(path: Path) -> dict[str, Any]:
 
 
 def _verify_sqlite(path: Path, required_tables: set[str]) -> None:
-    connection = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    connection = sqlite3.connect(sqlite_readonly_uri(path), uri=True)
     try:
         result = connection.execute("PRAGMA integrity_check").fetchone()
         tables = {
@@ -247,7 +238,7 @@ def _verify_sqlite(path: Path, required_tables: set[str]) -> None:
 
 
 def verify_backup(backup: str | Path) -> dict[str, Any]:
-    root = Path(backup).resolve()
+    root = extended_path(backup).resolve()
     _reject_symlinks(root)
     manifest = _manifest(root)
     records = manifest["files"]
@@ -286,7 +277,7 @@ def verify_backup(backup: str | Path) -> dict[str, Any]:
     artifacts = root / "artifacts" / "artifacts.db"
     _verify_sqlite(control, {"jobs", "checkpoints", "usage_ledger"})
     _verify_sqlite(artifacts, {"artifacts"})
-    connection = sqlite3.connect(f"file:{artifacts}?mode=ro", uri=True)
+    connection = sqlite3.connect(sqlite_readonly_uri(artifacts), uri=True)
     connection.row_factory = sqlite3.Row
     try:
         rows = connection.execute(
@@ -310,8 +301,8 @@ def verify_backup(backup: str | Path) -> dict[str, Any]:
 
 
 def restore_backup(*, backup: str | Path, target_root: str | Path) -> dict[str, Any]:
-    source = Path(backup).resolve()
-    target = Path(target_root).resolve()
+    source = extended_path(backup).resolve()
+    target = extended_path(target_root).resolve()
     if target.exists():
         raise BackupError(f"restore target already exists: {target}")
     verification = verify_backup(source)
@@ -328,9 +319,9 @@ def restore_backup(*, backup: str | Path, target_root: str | Path) -> dict[str, 
             stage / "restore_receipt.json",
             (json.dumps(receipt, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode(),
         )
-        _fsync_directory(stage)
+        fsync_directory(stage)
         os.replace(stage, target)
-        _fsync_directory(target.parent)
+        fsync_directory(target.parent)
         return receipt
     except Exception:
         shutil.rmtree(stage, ignore_errors=True)

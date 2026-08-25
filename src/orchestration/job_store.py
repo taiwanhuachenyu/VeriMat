@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from src.core.events import EventValidationError, validate_durable_payload
+from src.core.portability import extended_path
 from src.operations.migrations import (
     assert_control_compatibility, migrate_control_database, verify_control_database,
 )
@@ -146,7 +147,7 @@ class Job:
 
 class JobStore:
     def __init__(self, path: str | Path, *, full_schema_verification: bool = True):
-        self.path = str(path)
+        self.path = str(extended_path(path))
         Path(self.path).parent.mkdir(parents=True, exist_ok=True)
         if not Path(self.path).exists():
             migrate_control_database(self.path)

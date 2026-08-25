@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from src.core.events import EventValidationError
+from src.core.portability import extended_path
 from src.evidence.graph import GraphInvariantError
 from src.evidence.ledger import EventLedger, LedgerIntegrityError
 
@@ -92,7 +93,7 @@ class ExecutionWorker:
         if missing:
             raise ValueError("missing stage handlers: " + ", ".join(missing))
         self.store = store
-        self.ledger_root = Path(ledger_root)
+        self.ledger_root = extended_path(ledger_root)
         self.worker_id = worker_id
         self.handlers = handlers
         self.lease_seconds = lease_seconds

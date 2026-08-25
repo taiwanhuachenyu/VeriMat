@@ -1,7 +1,6 @@
 """W3C-compatible, secret-free HTTP trace records for the control plane."""
 from __future__ import annotations
 
-import fcntl
 import hashlib
 import os
 import re
@@ -12,6 +11,9 @@ from pathlib import Path
 from typing import Protocol
 
 from src.core.events import canonical_json
+from src.core.portability import (
+    create_private_file, extended_path, lock_exclusive, open_append_nofollow,
+)
 from src.service.metrics import METHOD_LABELS, ROUTE_LABELS
 
 TRACEPARENT = re.compile(
@@ -102,26 +104,17 @@ class StructuredTraceLog:
     """Append-only NDJSON trace sink with process locking and 0600 file permissions."""
 
     def __init__(self, path: str | Path):
-        self.path = Path(path)
+        self.path = extended_path(path)
         if self.path.is_symlink():
             raise ValueError("trace log must not be a symbolic link")
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        descriptor = os.open(
-            self.path, os.O_WRONLY | os.O_APPEND | os.O_CREAT | os.O_CLOEXEC, 0o600,
-        )
-        try:
-            os.fchmod(descriptor, 0o600)
-        finally:
-            os.close(descriptor)
+        create_private_file(self.path)
 
     def record(self, record: HttpTraceRecord) -> None:
         record.validate()
         rendered = (canonical_json(asdict(record)) + "\n").encode()
-        descriptor = os.open(
-            self.path, os.O_WRONLY | os.O_APPEND | os.O_CLOEXEC | os.O_NOFOLLOW,
-        )
+        descriptor = open_append_nofollow(self.path)
         try:
-            fcntl.flock(descriptor, fcntl.LOCK_EX)
+            lock_exclusive(descriptor)
             written = 0
             while written < len(rendered):
                 written += os.write(descriptor, rendered[written:])

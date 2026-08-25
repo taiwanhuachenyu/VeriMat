@@ -11,6 +11,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from src.core.events import canonical_json
+from src.core.portability import extended_path
 from src.operations.runtime_migrations import (
     MODEL_OPERATION_SPEC, assert_runtime_compatibility, prepare_runtime_database,
     schema_script,
@@ -63,7 +64,7 @@ class OpenCodeStructuredTransport(StructuredModelTransport):
         self.agent = agent
         self.timeout_seconds = timeout_seconds
         self.max_response_bytes = max_response_bytes
-        db_path = Path(operation_db)
+        db_path = extended_path(operation_db)
         db_path.parent.mkdir(parents=True, exist_ok=True)
         prepare_runtime_database(db_path, MODEL_OPERATION_SPEC)
         self.conn = sqlite3.connect(str(db_path), timeout=30, isolation_level=None)

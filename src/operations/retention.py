@@ -6,7 +6,6 @@ key, checkpoint payload, provider detail, or artifact content enters the plan or
 """
 from __future__ import annotations
 
-import fcntl
 import hashlib
 import json
 import os
@@ -21,6 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from src.core.events import canonical_json
+from src.core.portability import extended_path, lock_exclusive, sqlite_readonly_uri
 from src.evidence.ledger import EventLedger
 from src.orchestration.job_store import JobStatus, TERMINAL
 
@@ -66,7 +66,7 @@ def _artifact_blob(root: Path, tenant_id: str, digest: str) -> Path:
 def _readonly(path: Path) -> sqlite3.Connection:
     if path.is_symlink() or not path.is_file():
         raise RetentionError(f"database is absent or unsafe: {path}")
-    connection = sqlite3.connect(f"file:{path.resolve()}?mode=ro", uri=True, timeout=30)
+    connection = sqlite3.connect(sqlite_readonly_uri(path.resolve()), uri=True, timeout=30)
     connection.row_factory = sqlite3.Row
     return connection
 
@@ -81,9 +81,9 @@ def build_retention_plan(
     cutoff = float(cutoff_epoch)
     if not (0 <= cutoff <= now):
         raise RetentionError("cutoff must be a finite past epoch")
-    job_path = Path(job_database)
-    artifact_root_path = Path(artifact_root)
-    ledger_root_path = Path(ledger_root)
+    job_path = extended_path(job_database)
+    artifact_root_path = extended_path(artifact_root)
+    ledger_root_path = extended_path(ledger_root)
     artifact_db = artifact_root_path / "artifacts.db"
     jobs = _readonly(job_path)
     artifacts = _readonly(artifact_db)
@@ -178,7 +178,7 @@ def build_retention_plan(
 
 
 def write_plan(plan: dict[str, Any], destination: str | Path) -> None:
-    target = Path(destination)
+    target = extended_path(destination)
     if target.exists() or target.is_symlink():
         raise RetentionError("retention plan output must not already exist")
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -214,8 +214,8 @@ def _append_audit(path: Path, receipt: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
     try:
-        with os.fdopen(descriptor, "a", encoding="utf-8") as handle:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        with os.fdopen(descriptor, "a", encoding="utf-8", newline="\n") as handle:
+            lock_exclusive(handle)
             handle.write(canonical_json(receipt) + "\n")
             handle.flush()
             os.fsync(handle.fileno())
@@ -237,11 +237,14 @@ def execute_retention_plan(
     """
     core = _validate_plan(plan, acknowledged_sha256)
     tenant_id, plan_id = str(core["tenant_id"]), str(core["plan_id"])
-    job_path = Path(job_database).resolve()
-    artifact_root_path = Path(artifact_root).resolve()
-    ledger_root_path = Path(ledger_root).resolve()
+    # Prefixed before resolving, not after: resolving a plain path that is already too long fails
+    # outright on Windows, whereas the prefix survives ``resolve`` untouched.
+    job_path = extended_path(job_database).resolve()
+    artifact_root_path = extended_path(artifact_root).resolve()
+    ledger_root_path = extended_path(ledger_root).resolve()
     artifact_db = artifact_root_path / "artifacts.db"
-    maintenance = Path(maintenance_root).resolve()
+    audit_path = extended_path(audit_log)
+    maintenance = extended_path(maintenance_root).resolve()
     maintenance.mkdir(parents=True, exist_ok=True)
     lock_path = maintenance / "retention.lock"
     lock_descriptor = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o600)
@@ -251,14 +254,14 @@ def execute_retention_plan(
     committed = False
     audit_prepared = False
     try:
-        fcntl.flock(lock_descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        lock_exclusive(lock_descriptor, blocking=False)
         audit_identity = {
             "schema_version": 1,
             "operation_id": plan_id,
             "tenant_sha256": hashlib.sha256(tenant_id.encode()).hexdigest(),
             "plan_sha256": acknowledged_sha256,
         }
-        _append_audit(Path(audit_log), {
+        _append_audit(audit_path, {
             **audit_identity,
             "event_type": "RETENTION_PREPARED",
             "recorded_at": datetime.now(timezone.utc).isoformat(),
@@ -374,7 +377,7 @@ def execute_retention_plan(
             "wal_checkpoint_complete": checkpoint_complete,
             "external_api_calls": 0,
         }
-        _append_audit(Path(audit_log), receipt)
+        _append_audit(audit_path, receipt)
         return receipt
     except BlockingIOError as exc:
         raise RetentionError("another retention operation holds the maintenance lock") from exc
@@ -389,7 +392,7 @@ def execute_retention_plan(
             shutil.rmtree(quarantine, ignore_errors=True)
             if audit_prepared:
                 try:
-                    _append_audit(Path(audit_log), {
+                    _append_audit(audit_path, {
                         "schema_version": 1,
                         "operation_id": plan_id,
                         "event_type": "RETENTION_ABORTED",

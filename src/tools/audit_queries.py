@@ -7,6 +7,7 @@ import json
 import re
 from pathlib import Path
 
+from src.core.portability import extended_path
 from src.harness.validator import _artifact_after_replays, _counter_replay_coverage
 
 
@@ -113,8 +114,8 @@ def stale_artifacts(audit_path: Path, output_paths: list[Path]) -> list[dict]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--audit", type=Path, required=True)
-    parser.add_argument("outputs", nargs="+", type=Path)
+    parser.add_argument("--audit", type=extended_path, required=True)
+    parser.add_argument("outputs", nargs="+", type=extended_path)
     args = parser.parse_args(argv)
     missing = check(args.audit, args.outputs)
     replay_missing = missing_replays(args.audit, args.outputs)

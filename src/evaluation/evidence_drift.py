@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from src.core.events import canonical_json
+from src.core.portability import extended_path
 
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
 _OBSERVATION_FIELDS = {
@@ -123,8 +124,8 @@ def audit_evidence_drift(
     *, snapshot_path: str | Path, observation_path: str | Path,
 ) -> dict[str, Any]:
     """Replay one later observation per sealed capsule and return a fail-closed report."""
-    snapshots_target = Path(snapshot_path)
-    observations_target = Path(observation_path)
+    snapshots_target = extended_path(snapshot_path)
+    observations_target = extended_path(observation_path)
     snapshots = _read_jsonl(snapshots_target, label="snapshots")
     observations = _read_jsonl(observations_target, label="observations")
 

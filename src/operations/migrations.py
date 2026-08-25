@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from src.core.events import canonical_json
+from src.core.portability import extended_path
 
 CONTROL_APPLICATION_ID = 0x474F4149  # ASCII "GOAI"
 CONTROL_MIGRATIONS: dict[int, tuple[str, ...]] = {
@@ -89,7 +90,7 @@ def migration_checksum(version: int) -> str:
 
 
 def _connect(path: str | Path, *, must_exist: bool = False) -> sqlite3.Connection:
-    target = Path(path)
+    target = extended_path(path)
     if must_exist and not target.is_file():
         raise MigrationError(f"database does not exist: {target}")
     target.parent.mkdir(parents=True, exist_ok=True)

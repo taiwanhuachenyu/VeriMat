@@ -1,10 +1,11 @@
 """Fail-closed TLS context construction for the control plane."""
 from __future__ import annotations
 
-import os
 import ssl
 from dataclasses import dataclass
 from pathlib import Path
+
+from src.core.portability import extended_path, is_group_or_world_accessible
 
 
 class TLSConfigurationError(ValueError):
@@ -20,7 +21,7 @@ class ServerTLSConfig:
 
 
 def _regular_file(label: str, value: str | Path) -> Path:
-    path = Path(value)
+    path = extended_path(value)
     if path.is_symlink() or not path.is_file():
         raise TLSConfigurationError(f"{label} must be a regular non-symlink file")
     return path
@@ -29,7 +30,7 @@ def _regular_file(label: str, value: str | Path) -> Path:
 def build_server_tls_context(config: ServerTLSConfig) -> ssl.SSLContext:
     certificate = _regular_file("TLS certificate", config.certificate)
     private_key = _regular_file("TLS private key", config.private_key)
-    if private_key.stat().st_mode & 0o077:
+    if is_group_or_world_accessible(private_key):
         raise TLSConfigurationError("TLS private key must not be group/world accessible")
     client_ca = (
         _regular_file("client CA bundle", config.client_ca)

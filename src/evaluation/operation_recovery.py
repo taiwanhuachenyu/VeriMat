@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from src.core.events import canonical_json
+from src.core.portability import extended_path
 from src.operations.runtime_migrations import (
     MODEL_OPERATION_SPEC, RECONCILIATION_STATEMENTS, RETRIEVAL_OPERATION_SPEC,
 )
@@ -36,7 +37,7 @@ def _spec(kind: str) -> tuple[str, tuple[str, ...]]:
 
 
 def _connect(path: str | Path, kind: str) -> sqlite3.Connection:
-    target = Path(path)
+    target = extended_path(path)
     if not target.is_file():
         raise OperationRecoveryError(f"operation database does not exist: {target}")
     spec = MODEL_OPERATION_SPEC if kind == "model" else RETRIEVAL_OPERATION_SPEC

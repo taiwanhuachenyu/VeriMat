@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from src.core.portability import extended_path
+
 from .challenge import COUNTER_RELATIONS, validate_challenges
 from .ordered_runner import CreditOutcome
 
@@ -33,7 +35,7 @@ class SealedKnownAnswerCreditEvaluator:
     def __init__(
         self, challenge_path: str | Path, *, max_calls: int, max_tokens: int,
     ):
-        self.path = Path(challenge_path)
+        self.path = extended_path(challenge_path)
         rows = _rows(self.path)
         validate_challenges(rows)
         self.rows = {str(row["challenge_id"]): row for row in rows}

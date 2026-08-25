@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from src.core.events import canonical_json
+from src.core.portability import extended_path
 from src.operations.migrations import MIGRATION_TABLE_SQL, MigrationError
 
 
@@ -180,7 +181,7 @@ def migration_name(spec: DatabaseSpec, version: int) -> str:
 
 
 def _connect(path: str | Path, *, must_exist: bool = False) -> sqlite3.Connection:
-    target = Path(path)
+    target = extended_path(path)
     if target.is_symlink():
         raise MigrationError(f"database path must not be a symbolic link: {target}")
     if must_exist and not target.is_file():

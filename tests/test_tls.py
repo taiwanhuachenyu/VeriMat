@@ -3,6 +3,7 @@ import json
 
 import pytest
 
+from src.core.portability import FILE_MODE_ENFORCED
 from src.service.api import AuthRegistry
 from src.service.tls import (
     ServerTLSConfig, TLSConfigurationError, build_server_tls_context, host_is_loopback,
@@ -42,12 +43,13 @@ def test_tls_configuration_rejects_missing_ca_unsafe_key_and_symlinks(tmp_path):
             certificate=certificate, private_key=key,
             require_client_certificate=True,
         ))
-    key.chmod(0o644)
-    with pytest.raises(TLSConfigurationError, match="group/world"):
-        build_server_tls_context(ServerTLSConfig(
-            certificate=certificate, private_key=key,
-        ))
-    key.chmod(0o600)
+    if FILE_MODE_ENFORCED:
+        key.chmod(0o644)
+        with pytest.raises(TLSConfigurationError, match="group/world"):
+            build_server_tls_context(ServerTLSConfig(
+                certificate=certificate, private_key=key,
+            ))
+        key.chmod(0o600)
     link = tmp_path / "linked.key"
     link.symlink_to(key)
     with pytest.raises(TLSConfigurationError, match="non-symlink"):

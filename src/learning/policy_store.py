@@ -13,6 +13,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from src.core.portability import extended_path
 from src.operations.runtime_migrations import (
     POLICY_SPEC, assert_runtime_compatibility, prepare_runtime_database, schema_script,
 )
@@ -86,7 +87,7 @@ class PolicyStore:
     """
 
     def __init__(self, path: str | Path):
-        self.path = str(path)
+        self.path = str(extended_path(path))
         Path(self.path).parent.mkdir(parents=True, exist_ok=True)
         prepare_runtime_database(self.path, POLICY_SPEC)
         self.conn = sqlite3.connect(self.path, timeout=30, isolation_level=None)

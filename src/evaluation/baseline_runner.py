@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Protocol
 
+from src.core.portability import extended_path
 from src.evidence.graph import ClaimState, EvidenceRelation
 from src.evidence.ledger import EventLedger
 from src.orchestration.artifacts import ArtifactRef, ArtifactStore
@@ -38,7 +39,7 @@ class MethodSpec:
 
     @classmethod
     def load(cls, path: str | Path, method_id: str) -> tuple["MethodSpec", dict[str, int]]:
-        value = json.loads(Path(path).read_text(encoding="utf-8"))
+        value = json.loads(extended_path(path).read_text(encoding="utf-8"))
         if value.get("schema_version") != 1 or not isinstance(value.get("methods"), list):
             raise BaselineContractError("invalid method registry")
         matches = [item for item in value["methods"] if item.get("method_id") == method_id]
@@ -266,7 +267,7 @@ class BaselineTaskRunner:
     ):
         self.store = store
         self.artifacts = artifacts
-        self.ledger_root = Path(ledger_root)
+        self.ledger_root = extended_path(ledger_root)
         self.backend = backend
         self.retriever = retriever
         self.worker_id = worker_id

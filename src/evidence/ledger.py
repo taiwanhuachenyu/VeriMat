@@ -1,7 +1,6 @@
 """Process-safe append-only, SHA-256 hash-chained event ledger."""
 from __future__ import annotations
 
-import fcntl
 import json
 import os
 import uuid
@@ -10,6 +9,7 @@ from pathlib import Path
 from typing import Any, Iterator
 
 from src.core.events import EventEnvelope, EventValidationError, canonical_json
+from src.core.portability import extended_path, lock_exclusive, lock_shared
 
 
 class LedgerIntegrityError(RuntimeError):
@@ -37,7 +37,7 @@ class EventLedger:
     """
 
     def __init__(self, path: str | Path):
-        self.path = Path(path)
+        self.path = extended_path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
@@ -102,8 +102,8 @@ class EventLedger:
         occurred_at: str | None = None,
         expected_head: str | None = None,
     ) -> EventEnvelope:
-        with open(self.path, "a+", encoding="utf-8") as handle:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        with open(self.path, "a+", encoding="utf-8", newline="\n") as handle:
+            lock_exclusive(handle)
             events = self._load_locked(handle)
             semantic = self._semantic_fingerprint(
                 tenant_id=tenant_id, job_id=job_id, aggregate_type=aggregate_type,
@@ -151,7 +151,7 @@ class EventLedger:
         if not self.path.exists():
             return iter(())
         with open(self.path, encoding="utf-8") as handle:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_SH)
+            lock_shared(handle)
             events = self._load_locked(handle)
         return iter(events)
 
@@ -170,7 +170,7 @@ class EventLedger:
 
     def write_verification_receipt(self, destination: str | Path) -> VerificationReport:
         report = self.verify()
-        target = Path(destination)
+        target = extended_path(destination)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(
             json.dumps(report.__dict__, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
