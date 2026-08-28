@@ -117,3 +117,53 @@ def test_completed_reservation_race_reuses_cache_without_second_message(tmp_path
     )
     assert response.request_id == "request"
     assert [path for _, path, _ in transport.http_calls] == ["/session"]
+
+
+def _structured_tool_message():
+    # OpenCode carries json_schema output through an internal "StructuredOutput"
+    # synthetic tool; the object arrives both as the tool input and in info.structured.
+    return (200, {
+        "info": {
+            "id": "message", "providerID": "provider", "modelID": "model",
+            "tokens": {"input": 11, "output": 7},
+            "structured": {"queries": ["query"]},
+        },
+        "parts": [
+            {"type": "step-start"},
+            {"type": "tool", "tool": "StructuredOutput",
+             "state": {"status": "completed", "input": {"queries": ["query"]}}},
+        ],
+    })
+
+
+def test_structured_output_carrier_tool_is_not_tool_use(tmp_path):
+    transport = FakeTransport(tmp_path, [
+        (200, {"id": "session"}), _structured_tool_message(),
+    ])
+    response = transport.complete(
+        operation_id="operation", system="system", user="user",
+        response_schema={"type": "object"},
+    )
+    assert response.text == '{"queries":["query"]}'
+
+
+def test_structured_output_carrier_without_payload_is_still_refused(tmp_path):
+    status, body = _structured_tool_message()
+    body["info"]["structured"] = None
+    transport = FakeTransport(tmp_path, [(200, {"id": "session"}), (status, body)])
+    with pytest.raises(IndeterminateModelOperation, match="tool use"):
+        transport.complete(
+            operation_id="operation", system="system", user="user",
+            response_schema={"type": "object"},
+        )
+
+
+def test_real_tool_use_with_structured_payload_is_still_refused(tmp_path):
+    status, body = _structured_tool_message()
+    body["parts"].append({"type": "tool", "tool": "bash", "state": {"status": "completed"}})
+    transport = FakeTransport(tmp_path, [(200, {"id": "session"}), (status, body)])
+    with pytest.raises(IndeterminateModelOperation, match="tool use"):
+        transport.complete(
+            operation_id="operation", system="system", user="user",
+            response_schema={"type": "object"},
+        )

@@ -240,16 +240,32 @@ class OpenCodeStructuredTransport(StructuredModelTransport):
             if not isinstance(info, dict) or not isinstance(parts, list):
                 raise IndeterminateModelOperation("OpenCode returned an incomplete message envelope")
             if info.get("error"):
-                raise IndeterminateModelOperation("OpenCode reported a model error")
+                raise IndeterminateModelOperation(
+                    "OpenCode reported a model error: " + str(info["error"])[:300]
+                )
             if (
                 info.get("providerID") != self.provider_id
                 or info.get("modelID") != self.model_id
             ):
                 raise IndeterminateModelOperation("OpenCode reported a different provider/model alias")
-            if any(part.get("type") in {"tool", "tool-invocation"} for part in parts
-                   if isinstance(part, dict)):
-                raise IndeterminateModelOperation("tool use occurred in a tool-free benchmark session")
             structured = info.get("structured")
+            tool_parts = [
+                part for part in parts
+                if isinstance(part, dict) and part.get("type") in {"tool", "tool-invocation"}
+            ]
+            # OpenCode implements json_schema output through an internal synthetic
+            # "StructuredOutput" tool: the schema-conformant object arrives as that
+            # tool's input and is mirrored in info.structured.  It is the carrier of
+            # the requested format, not a capability grant, so it is tolerated only
+            # when the structured payload it carried is actually present.  Every
+            # other tool name in a tool-free session is still a hard failure.
+            carrier = {"structuredoutput", "structured_output"}
+            real_tool_use = [
+                part for part in tool_parts
+                if str(part.get("tool") or "").lower() not in carrier
+            ]
+            if real_tool_use or (tool_parts and structured is None):
+                raise IndeterminateModelOperation("tool use occurred in a tool-free benchmark session")
             if structured is not None:
                 response_text = canonical_json(structured)
             else:
