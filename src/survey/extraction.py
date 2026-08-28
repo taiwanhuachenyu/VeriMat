@@ -27,7 +27,7 @@ from src.evaluation.baseline_runner import Usage
 from src.evaluation.model_backend import StructuredModelTransport
 
 from .records import (
-    DIRECTIONS, METHODS, PROPERTIES, ExtractedRelation, SurveyContractError, SurveyCorpus,
+    DIRECTIONS, METHODS, PROPERTY_SETS, ExtractedRelation, SurveyContractError, SurveyCorpus,
     SurveyPassage, digest_id,
 )
 
@@ -66,7 +66,7 @@ RELATION_SCHEMA: dict[str, Any] = {
                     "passage_id": {"type": "string"},
                     "material": {"type": "string"},
                     "structural_feature": {"type": "string"},
-                    "property_name": {"enum": list(PROPERTIES)},
+                    "property_name": {"enum": list(sorted(set(PROPERTY_SETS["thermoelectric"]) | set(PROPERTY_SETS["solid_electrolyte"])))},
                     "direction": {"enum": list(DIRECTIONS)},
                     "quote": {"type": "string", "minLength": 12},
                     "composition": {"type": "string"},
@@ -187,14 +187,22 @@ class RelationExtractor:
     def __init__(
         self, *, transport: StructuredModelTransport, batch_size: int = BATCH_SIZE,
         max_passage_chars: int = MAX_PASSAGE_CHARS, prompt_profile: str = EXTRACTION_PROMPT_PROFILE,
+        vocabulary: str = "thermoelectric",
     ):
         if batch_size < 1:
             raise SurveyContractError("batch_size starts at 1")
         if max_passage_chars < 200:
             raise SurveyContractError("a passage window under 200 characters cannot hold a quote")
+        properties = PROPERTY_SETS.get(vocabulary)
+        if properties is None:
+            raise SurveyContractError(
+                f"vocabulary must be one of {sorted(PROPERTY_SETS)}, got {vocabulary!r}"
+            )
         self.transport = transport
         self.batch_size = batch_size
         self.max_passage_chars = max_passage_chars
+        self.vocabulary = vocabulary
+        self.properties = properties
         if not prompt_profile.strip():
             raise SurveyContractError("prompt profile is required")
         self.prompt_profile = prompt_profile
@@ -216,7 +224,7 @@ class RelationExtractor:
                 for passage_id, text in (self._exposed(item) for item in batch)
             ],
             "closed_vocabularies": {
-                "property_name": list(PROPERTIES),
+                "property_name": list(self.properties),
                 "direction": list(DIRECTIONS),
                 "method": list(METHODS),
             },
@@ -273,6 +281,7 @@ class RelationExtractor:
             value=value, unit=str(proposal.get("unit") or ""),
             temperature_k=temperature,
             method=str(proposal.get("method") or "unspecified"),
+            vocabulary=self.vocabulary,
         )
         try:
             relation.validate()

@@ -48,7 +48,7 @@ def test_transport_caches_one_structured_call_and_disables_tools(tmp_path):
     assert first.input_tokens == 11 and first.output_tokens == 7
     assert len(transport.http_calls) == 2
     prompt = transport.http_calls[1][2]
-    assert prompt["format"]["retryCount"] == 0
+    assert prompt["format"]["retryCount"] == 2
     assert prompt["tools"] and not any(prompt["tools"].values())
 
 

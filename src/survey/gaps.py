@@ -595,7 +595,18 @@ class GapNarrator:
             usage = response.usage()
             calls += usage.calls
             tokens += usage.tokens
-            self._admit(candidate, self._parse(response.text), exposed, outcome)
+            try:
+                parsed = self._parse(response.text)
+            except GapError as exc:
+                # A non-compliant narration is a refused candidate, not a failed stage: the
+                # refusal is recorded so the report can show what the model was not allowed
+                # to claim.
+                outcome.dropped.append({
+                    "candidate_id": candidate.candidate_id(), "kind": candidate.kind,
+                    "reason": f"narration_refused: {exc}",
+                })
+                continue
+            self._admit(candidate, parsed, exposed, outcome)
         outcome.usage = Usage(calls, tokens)
         outcome.usage.validate()
         return outcome

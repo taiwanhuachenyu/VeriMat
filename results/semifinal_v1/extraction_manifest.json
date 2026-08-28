@@ -1,0 +1,1 @@
+{"admission_rate":0.7368,"model_calls":14,"model_tokens":52202,"n_admitted":140,"n_proposed":190,"n_rejected":50,"rejections_by_reason":{"contract_violation":1,"duplicate":0,"quote_not_in_passage":20,"temperature_not_in_quote":7,"unexposed_passage":0,"value_not_in_quote":22}}

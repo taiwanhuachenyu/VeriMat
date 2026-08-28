@@ -36,6 +36,23 @@ PROPERTIES = (
     "phonon lifetime", "thermal stability", "hardness",
 )
 
+#: Solid-state-electrolyte vocabulary.  Same rationale as ``PROPERTIES``: the coverage matrix is
+#: only as good as the closure of the property names that feed it, and battery literature words
+#: like "ionic conductivity" must not melt into free text.
+SOLID_ELECTROLYTE_PROPERTIES = (
+    "ionic conductivity", "activation energy", "critical current density",
+    "electrochemical window", "interfacial resistance", "area specific resistance",
+    "air stability", "moisture stability", "cycling stability", "capacity retention",
+    "transference number", "electronic conductivity", "formation energy",
+    "energy above hull", "band gap", "thermal stability", "density", "phase stability",
+)
+
+#: Extraction runs against one closed property vocabulary at a time; ``vocabulary`` names which.
+PROPERTY_SETS = {
+    "thermoelectric": PROPERTIES,
+    "solid_electrolyte": SOLID_ELECTROLYTE_PROPERTIES,
+}
+
 #: The direction of effect is the whole content of a structure-property relation.  "Se vacancies
 #: change ZT" is not a finding; "Se vacancies raise ZT" is.
 DIRECTIONS = ("increase", "decrease", "non_monotonic", "unchanged", "unclear")
@@ -315,12 +332,14 @@ class ExtractedRelation:
     unit: str = ""
     temperature_k: str = ""
     method: str = "unspecified"
+    vocabulary: str = "thermoelectric"
 
     @classmethod
     def build(cls, *, passage_id: str, material: str, structural_feature: str,
               property_name: str, direction: str, quote: str, composition: str = "",
               value: str = "", unit: str = "", temperature_k: str = "",
-              method: str = "unspecified") -> "ExtractedRelation":
+              method: str = "unspecified",
+              vocabulary: str = "thermoelectric") -> "ExtractedRelation":
         return cls(
             relation_id=digest_id(
                 "rel", passage_id, material, composition, structural_feature,
@@ -329,7 +348,7 @@ class ExtractedRelation:
             passage_id=passage_id, material=material, structural_feature=structural_feature,
             property_name=property_name, direction=direction, quote=quote,
             composition=composition, value=value, unit=unit, temperature_k=temperature_k,
-            method=method,
+            method=method, vocabulary=vocabulary,
         )
 
     def validate(self) -> None:
@@ -338,7 +357,12 @@ class ExtractedRelation:
         _require(self.material, "material")
         _require(self.structural_feature, "structural_feature")
         _require(self.quote, "quote")
-        _one_of(self.property_name, PROPERTIES, "property_name")
+        vocabulary = PROPERTY_SETS.get(self.vocabulary)
+        if vocabulary is None:
+            raise SurveyContractError(
+                f"vocabulary must be one of {sorted(PROPERTY_SETS)}, got {self.vocabulary!r}"
+            )
+        _one_of(self.property_name, vocabulary, "property_name")
         _one_of(self.direction, DIRECTIONS, "direction")
         _one_of(self.method, METHODS, "method")
         if self.value and not self.unit and self.property_name != "ZT":

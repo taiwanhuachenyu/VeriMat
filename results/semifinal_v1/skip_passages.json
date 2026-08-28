@@ -1,0 +1,10 @@
+{
+ "reason": "batch 12 repeatedly exceeded 300s model timeout",
+ "batch_index": 12,
+ "passage_ids": [
+  "psg-5989485518603cfd",
+  "psg-5b5f8c71a4289453",
+  "psg-638e1603b63636f6",
+  "psg-6624ce3c2f692eab"
+ ]
+}

@@ -226,9 +226,13 @@ class OpenCodeStructuredTransport(StructuredModelTransport):
                 "model": {"providerID": self.provider_id, "modelID": self.model_id},
                 "agent": self.agent,
                 "tools": {name: False for name in self.DISABLED_TOOLS},
+                # Two server-side format retries: a StructuredOutputError is a clean,
+                # durable error response rather than an ambiguous in-flight state, so a
+                # bounded re-ask is safe and keeps a single malformed sample from
+                # failing a whole run.
                 "format": {
                     "type": "json_schema", "schema": response_schema,
-                    "retryCount": 0,
+                    "retryCount": 2,
                 },
                 "system": system,
                 "parts": [{"type": "text", "text": user}],
