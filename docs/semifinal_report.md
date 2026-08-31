@@ -104,6 +104,8 @@ V3 存活主张生成 **44 个发现包**：可证伪陈述、适用边界、哈
 
 ## 9. 复现
 
+推荐环境：**Linux + opencode server**（127.0.0.1:4124，HOME 隔离最小配置，工具禁用的 benchmark agent，代理 zhipuai/glm-5.3-flash 智谱 coding plan）——正式结果即产自该环境。
+
 ```bash
 bash scripts/smoke_test.sh        # 离线冒烟
 bash scripts/reproduce_core.sh    # 从快照重建全部结果（幂等，不重复计费）

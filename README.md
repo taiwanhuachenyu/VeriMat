@@ -14,6 +14,9 @@ VeriMat 是一个可审计的文献驱动材料发现智能体核心：语言模
 
 ## 1. 一键命令
 
+**推荐复现环境：Linux + 本地 opencode server（代理 zhipuai/glm-5.3-flash，智谱 coding plan）。**
+正式结果即在该环境产出；Windows/Claude Code 路线由同一传输协议支持（跨平台字节一致由 CI 校验）。
+
 ```bash
 bash scripts/smoke_test.sh        # 冒烟测试：离线、无需任何 API key，约 1 分钟
 bash scripts/reproduce_core.sh    # 复现核心结果：六方法对照 + oracle 裁定 + 发现包 + 报告
