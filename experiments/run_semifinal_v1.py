@@ -29,6 +29,8 @@ from src.core.events import canonical_json
 from src.evaluation.model_router import open_route
 from src.experiments.budget import BudgetedTransport
 from src.experiments.claims import Claim, VerifiedClaim
+from src.experiments.discovery_pack import build_packages
+from src.experiments.retrieval_cache import CachedThrottledSciverse
 from src.experiments.methods import METHODS, MethodContext, run_method
 from src.experiments.oracle import TimeSplitOracle
 from src.experiments.scoring import (
@@ -41,6 +43,14 @@ from src.survey.records import SurveyTopic
 from src.tools.sciverse import SciverseClient
 
 PREREG = ROOT / "preregistration" / "semifinal_v1.json"
+
+
+def shared_client(out: Path, audit_name: str = "retrieval_audit.jsonl"):
+    """One content-addressed retrieval client shared by every method in the run."""
+    inner = SciverseClient(audit_log=out / audit_name, quiet=True)
+    return CachedThrottledSciverse(
+        inner, cache_path=out / "retrieval_cache.jsonl", min_interval=3.0,
+    )
 
 
 class ThrottledSciverse:
@@ -103,13 +113,16 @@ def build_topic(prereg: dict, window: str) -> SurveyTopic:
         title="Thermoelectric materials structure-property relationships",
         seed_queries=(
             "thermoelectric materials ZT doping nanostructure",
-            "thermoelectric Seebeck coefficient thermal conductivity carrier concentration",
-            "nanostructuring lattice thermal conductivity thermoelectric figure of merit",
-            "thermoelectric power factor defect vacancy engineering ZT",
+            "bismuth telluride Bi2Te3 thermoelectric doping ZT",
+            "SnSe PbTe thermoelectric figure of merit anharmonicity",
+            "half-Heusler oxide thermoelectric power factor carrier concentration",
+            "nanostructuring lattice thermal conductivity thermoelectric",
+            "thermoelectric defect vacancy engineering Seebeck thermal conductivity",
         ),
         probe_questions=(
             "thermoelectric ZT Seebeck thermal conductivity measured",
             "doping vacancy nanostructure power factor carrier concentration",
+            "figure of merit decoUPLE lattice thermal conductivity",
         ),
         year_from=cfg["year_from"], year_to=cfg["year_to"],
         language="en", domain="thermoelectric materials",
@@ -134,8 +147,8 @@ def build_corpus(client, prereg: dict, out: Path) -> tuple[object, dict]:
     return corpus, coverage_report(corpus)
 
 
-def stage_freeze(prereg: dict, out: Path) -> None:
-    client = ThrottledSciverse(
+def stage_freeze(prereg: dict, out: Path, client=None) -> None:
+    client = client or ThrottledSciverse(
         SciverseClient(audit_log=out / "sciverse_audit.jsonl", quiet=True),
         min_interval=3.0,
     )
@@ -217,19 +230,20 @@ def load_extraction(out: Path, corpus):
     return list(result.relations.values())
 
 
-def stage_verify(prereg: dict, out: Path, make_transport, corpus) -> None:
+def stage_verify(prereg: dict, out: Path, make_transport, corpus, args_only: str = "") -> None:
     claims = [Claim(**json.loads(line)) for line in
               (out / "claims.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
-    for method in prereg["methods"]:
+    wanted = [m.strip() for m in args_only.split(",") if m.strip()] or list(prereg["methods"])
+    for method in wanted:
         method_dir = out / method
         if (method_dir / "predictions.jsonl").exists():
-            print(f"{method}: predictions already present, skipping (cache)")
+            print(f"{method}: predictions already present, skipping (cache)", flush=True)
             continue
         method_dir.mkdir(parents=True, exist_ok=True)
         inner = make_transport(method_dir / "model_operations.sqlite")
         transport = BudgetedTransport(inner, max_tokens=prereg["budget"]["max_tokens_per_method"])
         ctx = MethodContext(
-            client=SciverseClient(audit_log=method_dir / "sciverse_audit.jsonl", quiet=True),
+            client=shared_client(out, "retrieval_audit.jsonl"),
             transport=transport, discovery_year_to=prereg["discovery_window"]["year_to"],
             passages_by_id=corpus.passages, db_provider=None,
             mcts_iterations=prereg["mcts"]["iterations"],
@@ -323,13 +337,14 @@ def stage_oracle(prereg: dict, out: Path, make_transport) -> None:
     print("oracle done:", len(results), "claims,", len(addressed), "new gaps")
 
 
-def stage_score(prereg: dict, out: Path, corpus) -> None:
+def stage_score(prereg: dict, out: Path, corpus, args_only: str = "") -> None:
     oracle_doc = json.loads((out / "oracle_claims.json").read_text(encoding="utf-8"))
     states = oracle_doc["states"]
     passage_text = {key: p.text for key, p in corpus.passages.items()}
     scores: dict[str, Any] = {}
     per_method_predictions = {}
-    for method in prereg["methods"]:
+    wanted = [m.strip() for m in (args_only or "").split(",") if m.strip()] or list(prereg["methods"])
+    for method in wanted:
         rows = [json.loads(line) for line in
                 (out / method / "predictions.jsonl").read_text(encoding="utf-8").splitlines()
                 if line.strip()]
@@ -404,13 +419,16 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="GOAI semifinal closed-loop experiment")
     parser.add_argument("--stage", default="all",
                         choices=["all", "freeze", "extract", "claims", "verify", "gaps",
-                                 "oracle", "score", "report"])
+                                 "oracle", "packs", "score", "report"])
     parser.add_argument("--out", default=str(ROOT / "results" / "semifinal_v1"))
     parser.add_argument("--claim-limit", type=int, default=0,
                         help="override the preregistered claim cap (pilot runs only)")
+    parser.add_argument("--prereg", default="preregistration/semifinal_v2.json")
+    parser.add_argument("--only", default="",
+                        help="verify/score a comma-separated subset of methods (parallel runs)")
     args = parser.parse_args()
     load_env()
-    prereg = json.loads(PREREG.read_text(encoding="utf-8"))
+    prereg = json.loads((ROOT / args.prereg).read_text(encoding="utf-8"))
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
 
@@ -443,13 +461,14 @@ def main() -> None:
         )
         return selection.transport
 
-    stages = (["freeze", "extract", "claims", "verify", "gaps", "oracle", "score", "report"]
+    stages = (["freeze", "extract", "claims", "verify", "gaps", "oracle", "packs",
+               "score", "report"]
               if args.stage == "all" else [args.stage])
     corpus = None
     for stage in stages:
         print(f"== stage: {stage} ==")
         if stage == "freeze":
-            stage_freeze(prereg, out)
+            stage_freeze(prereg, out, shared_client(out, "retrieval_audit.jsonl"))
             corpus = load_corpus(prereg, out)
         elif stage == "extract":
             corpus = corpus or load_corpus(prereg, out)
@@ -475,7 +494,7 @@ def main() -> None:
             stage_claims(prereg, out, claim_limit=args.claim_limit)
         elif stage == "verify":
             corpus = corpus or load_corpus(prereg, out)
-            stage_verify(prereg, out, make_transport, corpus)
+            stage_verify(prereg, out, make_transport, corpus, args_only=args.only)
         elif stage == "gaps":
             corpus = corpus or load_corpus(prereg, out)
             for attempt in range(20):
@@ -509,9 +528,30 @@ def main() -> None:
                         raise
                     import time as _t
                     _t.sleep(70 if "circuit" in str(exc) else 10)
+        elif stage == "packs":
+            corpus = corpus or load_corpus(prereg, out)
+            inner = make_transport(out / "packs_model_operations.sqlite", timeout=600)
+            transport = BudgetedTransport(inner, max_tokens=prereg["budget"]["max_tokens_per_method"])
+            v3_predictions = out / "V3-full" / "predictions.jsonl"
+            if not v3_predictions.exists():
+                raise SystemExit("packs needs V3-full predictions; verify must finish first")
+            rows = [json.loads(line) for line in
+                    v3_predictions.read_text(encoding="utf-8").splitlines()
+                    if line.strip()]
+            preds = []
+            for row in rows:
+                claim = Claim(**row["claim"]); row.pop("claim")
+                preds.append(VerifiedClaim(claim=claim, **row))
+            packages, refused = build_packages(preds, corpus=corpus, transport=transport)
+            (out / "discovery_packages.jsonl").write_text(
+                "".join(pk.line() + "\n" for pk in packages), encoding="utf-8")
+            (out / "packs_refused.json").write_text(
+                canonical_json(refused) + "\n", encoding="utf-8")
+            inner.close()
+            print(f"discovery packages: {len(packages)} emitted, {len(refused)} refused", flush=True)
         elif stage == "score":
             corpus = corpus or load_corpus(prereg, out)
-            stage_score(prereg, out, corpus)
+            stage_score(prereg, out, corpus, args_only=args.only)
         elif stage == "report":
             stage_report(prereg, out)
     print("all requested stages complete")

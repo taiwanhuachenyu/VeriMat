@@ -1,0 +1,114 @@
+{
+  "preregistration_id": "semifinal-v2-thermo",
+  "frozen_at": "2026-08-28",
+  "domain": "thermoelectric",
+  "vocabulary": "thermoelectric",
+  "discovery_window": {
+    "year_from": 2000,
+    "year_to": 2021
+  },
+  "validation_window": {
+    "year_from": 2022,
+    "year_to": 2025
+  },
+  "corpus": {
+    "max_candidates": 100,
+    "semantic_top_k": 8,
+    "min_passage_chars": 240,
+    "citation_floor": 15,
+    "scope_shard_size": 5,
+    "max_claims": 300,
+    "claim_selection": "all admissible claims, deterministic order by claim_id, capped at max_claims"
+  },
+  "model_route": {
+    "route": "opencode",
+    "provider": "zhipuai",
+    "model": "glm-5.3-flash",
+    "agent": "build",
+    "tools_disabled": true,
+    "temperature_policy": "provider default, no sampling controls exposed by transport"
+  },
+  "budget": {
+    "max_tokens_per_method": 3000000,
+    "enforcement": "BudgetedTransport refuses calls once cumulative completed tokens cross the cap"
+  },
+  "mcts": {
+    "iterations": 8,
+    "max_depth": 2
+  },
+  "oracle": {
+    "version": "sse-oracle-v1",
+    "query_templates": [
+      "{material} {property} contrary decrease unexpected contradict",
+      "{material} {property} failure degradation limit drawback instability",
+      "{material} {feature} {property} measured report confirm",
+      "{material} {property} scope limited conditions only valid"
+    ],
+    "top_k": 4,
+    "aggregation": "contradicted dominates; then narrowed (scope-limiting support); then supported; else unresolved",
+    "quote_gate": "verbatim normalized-substring match against retrieved passage, else refused"
+  },
+  "verification": {
+    "counterevidence_templates": [
+      "{material} {feature} {property} decrease contrary unexpected",
+      "{material} {property} degradation failure limit drawback",
+      "{material} {feature} {property} discrepancy inconsistency between studies"
+    ],
+    "time_cap": "all verification searches restricted to year_to=2021",
+    "confidence_policy": {
+      "V0-vanilla-rag": "constant prior 0.8 (no verification)",
+      "others": "1 - n_contradicted/n_passages_read, clipped to [0.1, 1.0]; prior 0.8 when nothing read"
+    }
+  },
+  "methods": [
+    "V0-vanilla-rag",
+    "V1-dual-retrieval",
+    "V2-dual-cedg",
+    "V3-full",
+    "A1-no-mcts",
+    "A2-no-db"
+  ],
+  "metrics": [
+    "decision_accuracy",
+    "counterevidence_recall",
+    "overclaim_rate",
+    "already_known_false_gap_rate",
+    "evidence_replay_precision",
+    "brier",
+    "ece",
+    "tokens_per_valid_claim"
+  ],
+  "statistics": {
+    "paired_test": "two-sided paired permutation, 20000 shuffles, seed 20260903",
+    "multiplicity": "Holm-Bonferroni across the preregistered comparisons",
+    "comparisons": [
+      "V3-full vs V0-vanilla-rag",
+      "V3-full vs V1-dual-retrieval",
+      "V3-full vs V2-dual-cedg",
+      "V3-full vs A1-no-mcts",
+      "V3-full vs A2-no-db",
+      "V2-dual-cedg vs V1-dual-retrieval"
+    ]
+  },
+  "seeds": {
+    "permutation": 20260903
+  },
+  "scientific_result_semantics": "metrics measure closed-loop literature-verification behaviour against automated time-split and database oracles; they are not expert-attested materials discoveries",
+  "supersedes": "semifinal-v1-thermo (development run; v2 is confirmatory at scale)",
+  "retrieval": {
+    "shared_cache": "one content-addressed retrieval snapshot shared by all methods; identical queries return identical evidence",
+    "throttle": "min 3s between Sciverse calls, 429 backoff x12"
+  },
+  "discovery_packages": {
+    "enabled": true,
+    "scope": "V3-full ACCEPTED/NARROWED claims with passing evidence replay",
+    "fields": [
+      "falsifiable_statement",
+      "boundary",
+      "evidence_locators",
+      "counterevidence_considered",
+      "minimal_verification_experiment"
+    ],
+    "grounding": "model-proposed experiment text may not quote outside corpus; packs without a replayable evidence set are refused"
+  }
+}
