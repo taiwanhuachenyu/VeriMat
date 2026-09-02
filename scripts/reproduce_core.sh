@@ -4,7 +4,7 @@
 # Prerequisites (one-time):
 #   1. Python 3.11+, pip install -r requirements-dev.lock
 #   2. A local OpenCode server proxying zhipuai/glm-5.3-flash on 127.0.0.1:4124
-#      (isolated config: see docs/semifinal_report.md §3.4; tools disabled, agent "benchmark")
+#      (isolated config: see config/verimat.env.example; agent "build", request tools disabled)
 #   3. .env with SCIVERSE_API_TOKEN (Sciverse corpus access) --
 #      copy config/verimat.env.example to .env and fill it in.
 #   4. The corpus/retrieval snapshots are committed under results/semifinal_v2/, so stages

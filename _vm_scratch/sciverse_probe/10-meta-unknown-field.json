@@ -1,1 +1,0 @@
-{"code":"INVALID_REQUEST","message":"请求参数错误","request_id":"18d2bf18-9ef8-42de-84e0-b5e89ad394f1","details":[{"type":"extra_forbidden","loc":["body","definitely_not_a_field"],"msg":"Extra inputs are not permitted","input":1}]}

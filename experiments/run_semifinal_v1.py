@@ -392,7 +392,7 @@ def stage_score(prereg: dict, out: Path, corpus, args_only: str = "") -> None:
 def stage_report(prereg: dict, out: Path) -> None:
     summary = json.loads((out / "summary.json").read_text(encoding="utf-8"))
     lines = [
-        "# 热电构效 v1 — 闭环自动评测结果",
+        "# 热电构效闭环自动评测结果",
         "",
         f"预注册：{summary['preregistration']}｜语料：热电材料 2000–2021，验证窗 2022–2025",
         "",
@@ -450,7 +450,7 @@ def main() -> None:
             prereg["model_route"]["route"], operation_db=operation_db,
             env={
                 "VERIMAT_OPENCODE_BASE_URL": __import__("os").environ.get(
-                    "VERIMAT_OPENCODE_BASE_URL", "http://127.0.0.1:4123"),
+                    "VERIMAT_OPENCODE_BASE_URL", "http://127.0.0.1:4124"),
                 "VERIMAT_OPENCODE_PROVIDER": prereg["model_route"]["provider"],
                 "VERIMAT_OPENCODE_MODEL": prereg["model_route"]["model"],
                 "VERIMAT_OPENCODE_AGENT": prereg["model_route"]["agent"],

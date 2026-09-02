@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from src.core.events import canonical_json
+from src.core.portability import extended_path
 
 
 class CachedThrottledSciverse:
@@ -27,7 +28,7 @@ class CachedThrottledSciverse:
     def __init__(self, inner: Any, *, cache_path: str | Path,
                  min_interval: float = 3.0, wait_on_429: float = 75.0, max_429: int = 12):
         self._inner = inner
-        self._cache_path = Path(cache_path)
+        self._cache_path = extended_path(cache_path)
         self._cache_path.parent.mkdir(parents=True, exist_ok=True)
         self._min_interval = min_interval
         self._wait_on_429 = wait_on_429

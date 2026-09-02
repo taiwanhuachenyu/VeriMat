@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from src.core.events import canonical_json
+from src.core.portability import extended_path
 from src.survey.records import SurveyContractError, normalise_quote
 from src.tools.sciverse import SciverseClient, semantic_filters
 
@@ -155,7 +156,7 @@ class TimeSplitOracle:
         self.top_k = int(top_k)
         self.max_slices_per_doc = int(max_slices_per_doc)
         self.slice_limit = int(slice_limit)
-        self.cache_path = Path(cache_path)
+        self.cache_path = extended_path(cache_path)
         if not self.cache_path.name:
             raise SurveyContractError("cache_path must name a file")
         self.cache_path.parent.mkdir(parents=True, exist_ok=True)

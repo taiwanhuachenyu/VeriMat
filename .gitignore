@@ -20,5 +20,21 @@ __pycache__/
 secrets/
 _local/
 _vm_scratch/
+.lark-slides/
 AI for Research.pdf
 *.docx
+submission/*.pptx
+submission/*.pdf
+submission/*.docx
+submission/*.zip
+submission/*_预览.png
+submission/*_逐页预览.png
+
+# Local competition-delivery builders and artifacts are not part of the public repository.
+/submission/
+/requirements-submission.lock
+/scripts/build_semifinal_deck.py
+/scripts/build_semifinal_report.py
+/scripts/build_submission_packages.py
+/docs/assets/verimat_cover*.png
+/docs/assets/semifinal_main_results.png
