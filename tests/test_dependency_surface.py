@@ -37,10 +37,11 @@ def _imported_roots(path: Path) -> set[str]:
 
 
 def _declared_distributions() -> set[str]:
-    """Every distribution pinned by any lock file, normalised to its import name."""
+    """Every distribution pinned by a requirements file, normalised to its import name."""
     declared: set[str] = set()
-    for lock in sorted(ROOT.glob("requirements-*.lock")):
-        for line in lock.read_text(encoding="utf-8").splitlines():
+    files = list(ROOT.glob("requirements-*.lock")) + list(ROOT.glob("requirements-*.txt"))
+    for requirements in sorted(files):
+        for line in requirements.read_text(encoding="utf-8").splitlines():
             entry = line.split("#", 1)[0].strip()
             if entry:
                 declared.add(entry.split("==")[0].strip().replace("-", "_").lower())
@@ -76,11 +77,11 @@ def test_trusted_runtime_imports_only_the_standard_library(path: Path):
     [p for p in _sources() if not p.is_relative_to(ROOT / "src")],
     ids=lambda p: str(p.relative_to(ROOT)),
 )
-def test_tooling_imports_are_pinned_by_a_lock_file(path: Path):
+def test_tooling_imports_are_pinned_by_a_requirements_file(path: Path):
     declared = _declared_distributions()
     undeclared = [name for name in _third_party(path) if name.lower() not in declared]
     assert not undeclared, (
-        f"{path.relative_to(ROOT)} imports {undeclared}, which no requirements-*.lock pins"
+        f"{path.relative_to(ROOT)} imports {undeclared}, which no requirements file pins"
     )
 
 

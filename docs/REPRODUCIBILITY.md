@@ -11,7 +11,8 @@ bash scripts/install.sh
 source .venv/bin/activate
 ```
 
-The installer creates `.venv`, upgrades packaging tools, and installs the pinned `requirements-dev.lock`. It never reads or creates credentials.
+The installer creates `.venv`, upgrades packaging tools, and installs the pinned
+`requirements-dev.lock`. It never reads or creates credentials.
 
 ## 2. Offline smoke test
 

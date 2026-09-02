@@ -23,7 +23,7 @@ The checked-in results are under `results/v2_dev_plumbing_sanity_v4`.
 To regenerate the summary figure:
 
 ```bash
-python -m pip install -r requirements-figures.lock
+python -m pip install -r requirements-figures.txt
 python experiments/plot_dev_results.py \
   --results results/v2_dev_plumbing_sanity_v4 \
   --output results/v2_dev_plumbing_sanity_v4/figures/dev_benchmark_summary.png

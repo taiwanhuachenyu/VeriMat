@@ -25,7 +25,9 @@ Service availability, pricing, and provider terms may change. Reproduction users
 - Complete model prompts and response contracts: `docs/PROMPTS.md`
 - Frozen experiment definition: `preregistration/semifinal_v2.json`
 - Non-secret environment template: `config/verimat.env.example`
-- Pinned Python dependencies: `requirements-runtime.lock` and `requirements-dev.lock`
+- The trusted runtime uses only the Python 3.11+ standard library.
+- Fully locked test dependencies: `requirements-dev.lock`
+- Pinned plotting dependencies: `requirements-figures.txt`
 
 ## License boundary
 

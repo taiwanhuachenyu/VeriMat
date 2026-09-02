@@ -2,8 +2,8 @@
 """Sciverse API client covering all six endpoints, using only the standard library.
 
 VeriMat's literature evidence comes from https://api.sciverse.space (OpenDataLab / Shanghai AI
-Lab).  The client is built on ``urllib`` because ``requirements-runtime.lock`` declares the
-trusted runtime to be stdlib-only, and it is usable three ways: as a library, as a CLI an agent
+Lab). The client is built on ``urllib`` so the trusted runtime keeps a standard-library-only
+dependency boundary, and it is usable three ways: as a library, as a CLI an agent
 can drive over ``bash``, and as an audited transport whose every call appends to a JSONL evidence
 chain.
 
