@@ -1,4 +1,6 @@
 #!/bin/bash
+# GLM-5.3-Flash runs at reasoningEffort=max: 6/6 first-attempt schema
+# compliance in testing (medium was 5/6), ~9s per call.
 # Start the isolated benchmark OpenCode server (Linux, port 4124).
 # One-time setup: copy config/opencode_bench.json to $BENCH_HOME/.config/opencode/opencode.json
 # and put your zhipu coding-plan key inside it. Then:
